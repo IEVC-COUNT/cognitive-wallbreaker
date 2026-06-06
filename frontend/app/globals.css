@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── 认知破壁机 · 全局暗黑主题 ── */
+:root {
+  --bg: #080c14;
+  --surface: #0f1624;
+  --border: #1e2a3a;
+  --accent: #818cf8;
+  --glow: #818cf8;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --dim: #334155;
+  --danger: #f87171;
+  --success: #34d399;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans SC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 背景纹理 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 20%, rgba(129, 140, 248, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 500px 350px at 80% 60%, rgba(99, 102, 241, 0.04) 0%, transparent 55%),
+    linear-gradient(rgba(30, 42, 58, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 42, 58, 0.3) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.2);
+  border-radius: 2px;
+}
+
+/* 选中颜色 */
+::selection {
+  background: rgba(129, 140, 248, 0.3);
+  color: var(--text);
+}
+
+/* Markdown 内容样式 */
+.markdown-body {
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.markdown-body h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 24px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(129, 140, 248, 0.15);
+}
+
+.markdown-body h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+
+.markdown-body p {
+  margin: 8px 0;
+  color: rgba(226, 232, 240, 0.85);
+}
+
+.markdown-body ul, .markdown-body ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.markdown-body li {
+  margin: 4px 0;
+  color: rgba(226, 232, 240, 0.8);
+}
+
+.markdown-body strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.markdown-body code {
+  background: rgba(30, 42, 58, 0.5);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.markdown-body blockquote {
+  border-left: 2px solid var(--accent);
+  padding: 8px 16px;
+  margin: 12px 0;
+  background: rgba(129, 140, 248, 0.05);
+  border-radius: 0 6px 6px 0;
+}
+
+.markdown-body em {
+  color: var(--muted);
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 20px 0;
+}
+
+/* 呼吸灯动画 */
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 15px rgba(129, 140, 248, 0.15), inset 0 0 15px rgba(129, 140, 248, 0.02); }
+  50% { box-shadow: 0 0 35px rgba(129, 140, 248, 0.3), 0 0 70px rgba(129, 140, 248, 0.08), inset 0 0 25px rgba(129, 140, 248, 0.04); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes scan {
+  0%, 100% { opacity: 0.5; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+
+.animate-breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.animate-scan {
+  animation: scan 2s ease-in-out infinite;
+}

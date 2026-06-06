@@ -1,0 +1,25 @@
+# 认知破壁机 V2.0 后端依赖
+# 安装: pip install -r requirements_v2.txt
+
+# 核心
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+openai>=1.68.0
+pydantic>=2.10.0
+
+# 异步 HTTP
+httpx>=0.28.0
+aiofiles>=24.0.0
+
+# 长期记忆
+mem0ai>=0.1.0
+
+# 图片处理（可选）
+Pillow>=10.0.0
+
+# Telegram Bot (阶段三使用)
+python-telegram-bot>=20.0
+
+# 工具
+python-multipart>=0.0.18
+python-dotenv>=1.0.0
