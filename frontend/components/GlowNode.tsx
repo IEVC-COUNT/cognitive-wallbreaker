@@ -17,10 +17,10 @@ export function GlowNode({ data, selected }: { data: any; selected: boolean }) {
         width: NODE_WIDTH,
       }}
     >
-      <Handle type="target" position={Position.Top} style={{ background: style.border }} />
+      <Handle type="target" position={Position.Top} style={{ background: style.border }} isConnectable={false} />
       <div className="text-xs font-semibold truncate" style={{ color: style.border }}>{data.label}</div>
       <div className="text-[10px] text-wall-muted mt-1 truncate">{data.description}</div>
-      <Handle type="source" position={Position.Bottom} style={{ background: style.border }} />
+      <Handle type="source" position={Position.Bottom} style={{ background: style.border }} isConnectable={false} />
     </div>
   )
 }

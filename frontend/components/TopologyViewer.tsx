@@ -33,7 +33,7 @@ export function TopologyViewer({ nodes, edges, ready, onDrillDown }: {
           nodeColor={(n) => TYPE_STYLES[(n.data as any)?.nodeType]?.border || '#6366f1'}
         />
       </ReactFlow>
-      <div className="absolute top-3 left-3 bg-wall-surface/90 backdrop-blur border border-wall-border rounded-lg px-3 py-1.5 text-wall-muted text-xs z-10">
+      <div className="absolute top-3 left-3 bg-wall-surface/90 backdrop-blur border border-wall-border rounded-lg px-3 py-1.5 text-wall-muted text-xs z-10 pointer-events-none">
         决策拓扑沙盘 · 点击光点查看详情
       </div>
       {selectedNode && (
