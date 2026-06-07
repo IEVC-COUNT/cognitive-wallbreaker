@@ -253,7 +253,7 @@ function useWallbreaker() {
     }
   }, [reset])
 
-  // 沿分支继续推演 — 路径内延伸不替换主输出
+  // 单路路径内延伸：拓扑节点点击→SSE推演→结果展示在下方紫色区，不替换主输出，可关闭
   const [drillOutput, setDrillOutput] = useState('')
   const [drillThinking, setDrillThinking] = useState(false)
   const [drillTopoNodes, setDrillTopoNodes] = useNodesState([])
@@ -562,6 +562,7 @@ function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topo
   const drillAbortRef = useRef<AbortController | null>(null)
   useEffect(() => { if (ref.current) ref.current.scrollTop = ref.current.scrollHeight }, [output, drillOutput])
 
+  // 双路路径内延伸：直接在各自列内SSE推演并展示结果+拓扑，不影响另一路
   const handleDrillDown = async (node: Node) => {
     const query = `基于之前的推演，我选择深入分析这个分支：「${(node.data as any)?.label}」——${(node.data as any)?.description}。请对此进行更深入的破壁推演。`
     drillAbortRef.current?.abort()
@@ -618,9 +619,10 @@ function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topo
       </div>
       {topoReady && (
         <div className="h-56 relative border-t border-wall-border/30 shrink-0 overflow-hidden" style={{ minWidth: 0 }}>
+          {/* 注意: 不能加 elementsSelectable={false}，否则 onNodeClick 失效！ */}
           <ReactFlow nodes={topoNodes} edges={topoEdges} nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.2 }}
             minZoom={0.2} maxZoom={1.2} nodesDraggable={false} nodesConnectable={false}
-            onNodeClick={(_, node) => setSelectedNode(node)}
+            onNodeClick={(_, node) => setSelectedNode(node)}  {/* 节点点击弹出详情卡 */}
             defaultEdgeOptions={{ type: 'smoothstep', animated: true, style: { stroke: '#334155', strokeWidth: 1 } }}
             proOptions={{ hideAttribution: true }}>
             <Background color="#1e2a3a" gap={16} />
