@@ -1,0 +1,51 @@
+# 认知破壁机 V5.0 — Docker Compose 一键部署
+# 启动: docker compose up -d
+# 停止: docker compose down
+# 查看: docker compose logs -f
+
+version: "3.8"
+
+services:
+  # ──── 后端 API ────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: wallbreaker-backend
+    ports:
+      - "8920:8920"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-39d2be9a198742978eb9cabc3cc5bf05}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.deepseek.com/v1}
+      - WALLBREAKER_MODEL=${WALLBREAKER_MODEL:-deepseek-chat}
+      - V5_AGENT_TIMEOUT=${V5_AGENT_TIMEOUT:-45}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+    volumes:
+      # 持久化记忆 + 历史数据
+      - wallbreaker_data:/app/../data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8920/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ──── 前端 ────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: wallbreaker-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - NEXT_API_HOST=backend
+      - NEXT_API_PORT=8920
+    restart: unless-stopped
+
+volumes:
+  wallbreaker_data:
+    driver: local

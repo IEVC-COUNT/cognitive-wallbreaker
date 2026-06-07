@@ -1,0 +1,41 @@
+# Docker
+Dockerfile
+Dockerfile.*
+docker-compose.yml
+.dockerignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+.next/
+out/
+
+# 环境变量（含 API 密钥）
+.env
+
+# 数据（用户记忆/历史含隐私）
+data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 备份
+*.rar
+*.zip
+*.tar.gz
+*backup*
