@@ -984,8 +984,18 @@ async def simulate_dual(
                         "text": delta.content,
                     })
 
-            # 提取拓扑
+            # 提取拓扑（若无则生成基础拓扑，保证两路都有沙盘）
             topology = parse_topology_v2(full_text)
+            if not topology and len(full_text) > 100:
+                # 兜底：从文本中提取关键词生成基础拓扑
+                keywords = re.findall(r'[一-鿿]{2,6}(?:风险|机会|问题|策略|路径|选择|危机|陷阱|优势|劣势)', full_text)
+                nodes = [{"id": "n1", "label": "决策核心", "type": "core", "description": "当前分析的核心决策"}]
+                for i, kw in enumerate(keywords[:7]):
+                    nodes.append({"id": f"n{i+2}", "label": kw[:8], "type": "risk" if i%3==0 else ("safe" if i%3==1 else "psychology"), "description": kw})
+                edges = []
+                for i in range(1, min(len(nodes), 5)):
+                    edges.append({"source": "n1", "target": f"n{i+1}", "label": "关联"})
+                topology = {"topology_version": "2.0", "nodes": nodes, "edges": edges}
 
             await q.put({
                 "type": "done",
@@ -994,12 +1004,11 @@ async def simulate_dual(
                 "elapsed_ms": 0,
             })
 
-            if topology:
-                await q.put({
-                    "type": "topology",
-                    "path": path,
-                    "data": topology,
-                })
+            await q.put({
+                "type": "topology",
+                "path": path,
+                "data": topology,
+            })
 
         except Exception as e:
             await q.put({
