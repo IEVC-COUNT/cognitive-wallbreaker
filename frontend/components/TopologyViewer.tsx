@@ -16,7 +16,7 @@ export function TopologyViewer({ nodes, edges, ready, onDrillDown }: {
   if (!ready) return null
 
   return (
-    <div className="flex-1 relative min-h-[300px]">
+    <div className="w-full h-[400px] relative">
       <ReactFlow
         nodes={nodes} edges={edges} nodeTypes={nodeTypes}
         onNodeClick={(_, node) => setSelectedNode(node)}
