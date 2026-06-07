@@ -34,12 +34,20 @@ export default function EventDetailPage() {
   const [branchTopoReady, setBranchTopoReady] = useState(false)
   const [branchStats, setBranchStats] = useState<{length:number;elapsed_ms:number}|null>(null)
 
-  const handleDrillDown = async (label: string, desc: string) => {
+  const handleDrillDown = (label: string, desc: string) => {
     const query = `基于之前的推演分析，请深入推演这个分支：${label}——${desc}`
+    // 立即显示面板，不等待API
     setBranchQuery(query)
-    setBranchResult('')
+    setBranchResult('⏳ 正在推演中...')
     setBranchThinking(true)
     setBranchTopoReady(false)
+    setBranchStats(null)
+
+    // 异步推演
+    doDrillDown(query)
+  }
+
+  const doDrillDown = async (query: string) => {
 
     const formData = new FormData()
     formData.append('event', query)

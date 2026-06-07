@@ -20,6 +20,7 @@ export function GlowNode({ data, selected }: { data: any; selected: boolean }) {
       <Handle type="target" position={Position.Top} style={{ background: style.border }} isConnectable={false} />
       <div className="text-xs font-semibold truncate" style={{ color: style.border }}>{data.label}</div>
       <div className="text-[10px] text-wall-muted mt-1 truncate">{data.description}</div>
+      <div className="text-[8px] text-wall-dim mt-1 opacity-50">双击延伸推演</div>
       <Handle type="source" position={Position.Bottom} style={{ background: style.border }} isConnectable={false} />
     </div>
   )
