@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Loader2, CornerDownLeft, Zap, Trash2, Users } from 'lucide-react'
 import { ImageUploader } from '@/components/ImageUploader'
 import { MarkdownOutput } from '@/components/MarkdownOutput'
@@ -19,12 +19,12 @@ export default function SubmitPage() {
   const [input, setInput] = useState('')
   const [images, setImages] = useState<File[]>([])
   const [mode, setMode] = useState<'v4' | 'v5'>('v4')
-  const searchParams = useSearchParams()
 
   useEffect(() => {
-    const q = searchParams.get('q')
-    if (q) setInput(q)
-  }, [searchParams])
+    // 原生 URL 读取，避免 Next.js Suspense 依赖
+    const q = new URLSearchParams(window.location.search).get('q')
+    if (q) setInput(decodeURIComponent(q))
+  }, [])
   const { output, thinking, error, stats, topoNodes, topoEdges, topoReady,
     setTopoNodes, setTopoEdges, setTopoReady, reset } = useWallbreaker()
   const [loadingText, setLoadingText] = useState('')
