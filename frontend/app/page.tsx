@@ -518,13 +518,15 @@ function ImageUploader({ images, onAdd, onRemove, disabled }: {
 /* ══════════════════════════════════════════════════════════════
    双路推演 — 单列输出组件
    ══════════════════════════════════════════════════════════════ */
-function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topoReady, error, borderColor }: {
+function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topoReady, error, borderColor, onDrillDown }: {
   label: string; output: string; thinking: boolean
   stats: { length: number; elapsed_ms: number } | null
   topoNodes: Node[]; topoEdges: Edge[]; topoReady: boolean
   error: string; borderColor: string
+  onDrillDown?: (node: Node) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   useEffect(() => { if (ref.current) ref.current.scrollTop = ref.current.scrollHeight }, [output])
   return (
     <div className="flex-1 flex flex-col min-w-0">
@@ -549,12 +551,31 @@ function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topo
       {topoReady && (
         <div className="h-56 relative border-t border-wall-border/30 shrink-0">
           <ReactFlow nodes={topoNodes} edges={topoEdges} nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.3 }}
-            minZoom={0.3} maxZoom={1.5} nodesDraggable={false} nodesConnectable={false} elementsSelectable={false}
+            minZoom={0.3} maxZoom={1.5} nodesDraggable={false} nodesConnectable={false}
+            onNodeClick={(_, node) => setSelectedNode(node)}
             defaultEdgeOptions={{ type: 'smoothstep', animated: true, style: { stroke: '#334155', strokeWidth: 1 } }}
             proOptions={{ hideAttribution: true }}>
             <Background color="#1e2a3a" gap={16} />
           </ReactFlow>
-          <div className="absolute top-2 left-2 bg-wall-surface/80 backdrop-blur border border-wall-border rounded px-2 py-0.5 text-wall-dim text-[10px] z-10">拓扑</div>
+          <div className="absolute top-2 left-2 bg-wall-surface/80 backdrop-blur border border-wall-border rounded px-2 py-0.5 text-wall-dim text-[10px] z-10 pointer-events-none">拓扑 · 点光查看详情</div>
+          {selectedNode && (
+            <div className="absolute bottom-4 right-4 w-64 bg-wall-surface/95 backdrop-blur border border-wall-border rounded-2xl p-4 z-10 shadow-2xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold" style={{ color: TYPE_STYLES[(selectedNode.data as any)?.nodeType]?.border || '#6366f1' }}>
+                  {TYPE_STYLES[(selectedNode.data as any)?.nodeType]?.label || '节点'}
+                </span>
+                <button onClick={() => setSelectedNode(null)} className="text-wall-muted hover:text-wall-text"><X size={14} /></button>
+              </div>
+              <p className="text-wall-text font-semibold text-sm mb-1">{(selectedNode.data as any)?.label}</p>
+              <p className="text-wall-muted text-xs mb-3">{(selectedNode.data as any)?.description}</p>
+              {onDrillDown && (
+                <button onClick={() => { onDrillDown(selectedNode); setSelectedNode(null) }}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[#818cf8]/10 border border-[#818cf8]/30 rounded-xl text-[#818cf8] text-xs hover:bg-[#818cf8]/20 transition-all">
+                  <Share2 size={12} /> 沿此分支继续推演
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1067,11 +1088,13 @@ export default function Home() {
           <div className="flex-1 flex min-h-0">
             <DualColumn label={dual.labels.a} output={dual.outputA} thinking={dual.running && !dual.outputA}
               stats={dual.statsA} topoNodes={dual.topoNodesA} topoEdges={dual.topoEdgesA}
-              topoReady={dual.topoReadyA} error={dual.error} borderColor="#6366f1" />
+              topoReady={dual.topoReadyA} error={dual.error} borderColor="#6366f1"
+              onDrillDown={(node) => { setMode('single'); setInput(`深入分析：${(node.data as any)?.label} — ${(node.data as any)?.description}`) }} />
             <div className="w-px bg-wall-border/50" />
             <DualColumn label={dual.labels.b} output={dual.outputB} thinking={dual.running && !dual.outputB}
               stats={dual.statsB} topoNodes={dual.topoNodesB} topoEdges={dual.topoEdgesB}
-              topoReady={dual.topoReadyB} error="" borderColor="#f59e0b" />
+              topoReady={dual.topoReadyB} error="" borderColor="#f59e0b"
+              onDrillDown={(node) => { setMode('single'); setInput(`深入分析：${(node.data as any)?.label} — ${(node.data as any)?.description}`) }} />
           </div>
         </>)}
         </div>
