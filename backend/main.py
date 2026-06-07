@@ -146,10 +146,14 @@ def parse_topology_v2(text: str) -> Optional[dict]:
 # ═══════════════════════════════════════════
 
 app = FastAPI(
-    title="认知破壁机 · Cognitive Wallbreaker API",
-    version="5.0.0",
-    description="多智能体对抗推演 — 七Agent辩论，魔鬼代言人挑刺，终审法官判决",
+    title="认知破壁机 · 公共个人决策推演平台",
+    version="6.0.0",
+    description="AI多智能体对抗推演 — 七Agent辩论，魔鬼代言人挑刺，终审法官判决",
 )
+
+# 初始化 SQLite 公共事件数据库
+from database import init_db
+init_db()
 
 # CORS 配置
 app.add_middleware(
@@ -1083,6 +1087,12 @@ def _ocr_single_image(data_uri: str) -> str:
     except Exception:
         return ""
 
+
+# ═══════════════════════════════════════════
+# V6.0: 注册公共推演平台路由
+# ═══════════════════════════════════════════
+from public_api import router as public_router
+app.include_router(public_router)
 
 if __name__ == "__main__":
     import uvicorn

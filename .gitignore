@@ -35,3 +35,4 @@ Thumbs.db
 
 # 备份
 *backup*
+data/public.db
