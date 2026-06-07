@@ -22,7 +22,7 @@ export function TopologyViewer({ nodes, edges, ready, onDrillDown }: {
         onNodeClick={(_, node) => setSelectedNode(node)}
         onNodeDoubleClick={(_, node) => onDrillDown?.((node.data as any)?.label || '', (node.data as any)?.description || '')}
         fitView fitViewOptions={{ padding: 0.3 }}
-        minZoom={0.3} maxZoom={2} nodesDraggable={false} nodesConnectable={false}
+        minZoom={0.3} maxZoom={2} nodesDraggable={false} nodesConnectable={false} nodesFocusable={true} selectNodesOnDrag={false}
         defaultEdgeOptions={{ type: 'smoothstep', animated: true, style: { stroke: '#475569', strokeWidth: 1.5, strokeDasharray: '6 3' } }}
         proOptions={{ hideAttribution: true }}
       >

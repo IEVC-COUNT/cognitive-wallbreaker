@@ -1,13 +1,26 @@
 'use client'
 
+import { useCallback } from 'react'
 import { Position, Handle } from 'reactflow'
 import { TYPE_STYLES, NODE_WIDTH } from '@/hooks/useWallbreaker'
 
 export function GlowNode({ data, selected }: { data: any; selected: boolean }) {
   const style = TYPE_STYLES[data.nodeType] || TYPE_STYLES.core
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    // 通过自定义事件通知父组件
+    const event = new CustomEvent('node-drilldown', {
+      bubbles: true,
+      detail: { label: data.label, description: data.description }
+    })
+    e.currentTarget.dispatchEvent(event)
+  }, [data.label, data.description])
+
   return (
     <div
       className="relative px-4 py-3 rounded-2xl cursor-pointer transition-all duration-300"
+      onDoubleClick={handleClick}
       style={{
         background: `radial-gradient(ellipse at center, ${style.bg} 0%, rgba(15,22,36,0.9) 100%)`,
         border: `1.5px solid ${selected ? style.glow : style.border}`,
