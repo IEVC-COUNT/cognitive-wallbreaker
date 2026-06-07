@@ -1,3 +1,23 @@
+/**
+ * 认知破壁机 — 拓扑沙盘交互修复方法 (2026-06-08)
+ *
+ * 三个关键改动让拓扑光点可点击+可延伸推演：
+ *
+ * 1. 删掉 elementsSelectable={false}
+ *    elementsSelectable={false} 把 ReactFlow 所有节点交互全禁了，包括点击。
+ *    删掉它光点就能点了。这是罪魁祸首。
+ *
+ * 2. 加了 onNodeClick
+ *    onNodeClick={(_, node) => setSelectedNode(node)}
+ *    没有这个 ReactFlow 不知道点了哪个节点，弹出的详情卡片就没法显示。
+ *
+ * 3. 加了 drillDown/onDrillDown 回调
+ *    双路模式: DualColumn 内置 handleDrillDown 在路径内 SSE 推演
+ *    单路模式: drillDown 在下方紫色区展示延伸结果
+ *    各自独立延伸，互不替换主输出，可关闭
+ *
+ * 双路宽度均匀: 父容器 grid-cols-2 + 删掉中间分隔线(3子撑爆2列)
+ */
 'use client'
 
 import { useState, useRef, useEffect, useCallback, DragEvent, ChangeEvent } from 'react'
