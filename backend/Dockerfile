@@ -1,21 +1,12 @@
 # 认知破壁机 V5.0 — 后端 Docker
-# Python 3.12 + Node.js (OCR 辅助)
+# Python 3.12（OCR 功能需 Node.js，Docker 中暂不包含以加速构建）
 FROM python:3.12-slim
-
-# 安装 Node.js（ocr_helper.js 需要）
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    gnupg \
-    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# ── Python 依赖 ──
+# ── Python 依赖（国内阿里云镜像加速）──
 COPY requirements_v2.txt .
-RUN pip install --no-cache-dir -r requirements_v2.txt
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements_v2.txt
 
 # ── 源码 ──
 COPY . .

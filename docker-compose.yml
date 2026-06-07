@@ -20,12 +20,12 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
     volumes:
       # 持久化记忆 + 历史数据
-      - wallbreaker_data:/app/../data
+      - wallbreaker_data:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8920/api/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; r=urllib.request.urlopen('http://localhost:8920/api/health'); exit(0 if r.status==200 else 1)"]
       interval: 30s
-      timeout: 5s
+      timeout: 10s
       retries: 3
 
   # ──── 前端 ────
