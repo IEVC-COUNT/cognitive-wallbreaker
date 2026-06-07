@@ -549,9 +549,9 @@ function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topo
         )}
       </div>
       {topoReady && (
-        <div className="h-56 relative border-t border-wall-border/30 shrink-0">
-          <ReactFlow nodes={topoNodes} edges={topoEdges} nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.3 }}
-            minZoom={0.3} maxZoom={1.5} nodesDraggable={false} nodesConnectable={false}
+        <div className="h-56 relative border-t border-wall-border/30 shrink-0 overflow-hidden" style={{ minWidth: 0 }}>
+          <ReactFlow nodes={topoNodes} edges={topoEdges} nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.2 }}
+            minZoom={0.2} maxZoom={1.2} nodesDraggable={false} nodesConnectable={false}
             onNodeClick={(_, node) => setSelectedNode(node)}
             defaultEdgeOptions={{ type: 'smoothstep', animated: true, style: { stroke: '#334155', strokeWidth: 1 } }}
             proOptions={{ hideAttribution: true }}>
