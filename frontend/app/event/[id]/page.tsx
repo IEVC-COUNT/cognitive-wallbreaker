@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, ArrowLeft, Clock, Eye, Heart, Share2, Send, Star, FileDown } from 'lucide-react'
+import { Loader2, ArrowLeft, Clock, Eye, Heart, Send, Star, FileDown, GitBranch } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { TopologyViewer } from '@/components/TopologyViewer'
@@ -13,7 +13,6 @@ import { Node, Edge } from 'reactflow'
 
 export default function EventDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const eventId = params.id as string
   const [event, setEvent] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -26,9 +25,66 @@ export default function EventDetailPage() {
   const [submittingOutcome, setSubmittingOutcome] = useState(false)
   const [outcomeMsg, setOutcomeMsg] = useState('')
 
-  const handlePrint = () => {
-    window.print()
+  // ── 沙盘内延伸推演 ──
+  const [branchQuery, setBranchQuery] = useState('')
+  const [branchResult, setBranchResult] = useState('')
+  const [branchThinking, setBranchThinking] = useState(false)
+  const [branchTopoNodes, setBranchTopoNodes] = useState<Node[]>([])
+  const [branchTopoEdges, setBranchTopoEdges] = useState<Edge[]>([])
+  const [branchTopoReady, setBranchTopoReady] = useState(false)
+  const [branchStats, setBranchStats] = useState<{length:number;elapsed_ms:number}|null>(null)
+
+  const handleDrillDown = async (label: string, desc: string) => {
+    const query = `基于之前的推演分析，请深入推演这个分支：${label}——${desc}`
+    setBranchQuery(query)
+    setBranchResult('')
+    setBranchThinking(true)
+    setBranchTopoReady(false)
+
+    const formData = new FormData()
+    formData.append('event', query)
+    formData.append('mode', 'v4')
+    formData.append('anonymous_id', 'drill_' + Math.random().toString(36).slice(2,8))
+
+    try {
+      const resp = await fetch('/api/public/submit', { method: 'POST', body: formData })
+      if (!resp.ok) throw new Error('HTTP ' + resp.status)
+      const reader = resp.body?.getReader()
+      if (!reader) throw new Error('No body')
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let full = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try {
+            const msg = JSON.parse(line.slice(6))
+            if (msg.type === 'content') { full += msg.text || ''; setBranchResult(full) }
+            else if (msg.type === 'thinking') setBranchResult(prev => prev || msg.text || '')
+            else if (msg.type === 'done') setBranchStats({ length: msg.length, elapsed_ms: msg.elapsed_ms })
+            else if (msg.type === 'topology' && msg.data?.nodes) {
+              const rn = buildTopoNodes(msg.data.nodes)
+              const re = buildTopoEdges(msg.data.edges)
+              const { nodes, edges } = layoutTopology(rn, re)
+              setBranchTopoNodes(nodes); setBranchTopoEdges(edges); setBranchTopoReady(true)
+            }
+          } catch { /* skip */ }
+        }
+      }
+    } catch (e: any) {
+      setBranchResult(`推演失败: ${e.message}`)
+    } finally {
+      setBranchThinking(false)
+    }
   }
+
+  const handlePrint = () => window.print()
 
   const submitOutcome = async () => {
     if (!outcomeText.trim()) return
@@ -38,15 +94,11 @@ export default function EventDetailPage() {
     formData.append('accuracy_score', String(accuracyScore))
     const resp = await fetch(`/api/public/events/${eventId}/outcome`, { method: 'POST', body: formData })
     if (resp.ok) {
-      setOutcomeMsg('✅ 现实反馈已提交，感谢你的贡献！')
-      setOutcomeText('')
-      setAccuracyScore(3)
-      // 刷新事件数据
+      setOutcomeMsg('✅ 现实反馈已提交！')
+      setOutcomeText(''); setAccuracyScore(3)
       const r = await fetch(`/api/public/events/${eventId}`)
       if (r.ok) setEvent(await r.json())
-    } else {
-      setOutcomeMsg('❌ 提交失败，请重试')
-    }
+    } else { setOutcomeMsg('❌ 提交失败') }
     setSubmittingOutcome(false)
   }
 
@@ -116,18 +168,48 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      {/* Result + Topology */}
-      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row min-h-[40vh]">
+      {/* 原始推演 Result + Topology */}
+      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row">
         <div className="flex-1 p-6 markdown-body">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{event.result || ''}</ReactMarkdown>
         </div>
         {topoReady && (
           <div className="lg:w-[500px] h-[400px] lg:h-auto border-l border-wall-border/50">
             <TopologyViewer nodes={topoNodes} edges={topoEdges} ready={topoReady}
-              onDrillDown={(label) => router.push(`/submit?q=${encodeURIComponent(`深入分析：${label}`)}`)} />
+              onDrillDown={handleDrillDown} />
           </div>
         )}
       </div>
+
+      {/* ── 沙盘延伸推演结果 ── */}
+      {(branchQuery || branchThinking) && (
+        <div className="border-t-2 border-purple-500/30 bg-purple-500/[0.02]">
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            <div className="flex items-center gap-2 mb-3">
+              <GitBranch size={16} className="text-purple-400" />
+              <span className="text-purple-300 text-sm font-medium">拓扑分支延伸推演</span>
+              {branchThinking && <Loader2 size={14} className="animate-spin text-purple-400" />}
+              {branchStats && <span className="text-wall-dim text-xs">{branchStats.length}字 · {(branchStats.elapsed_ms/1000).toFixed(1)}s</span>}
+            </div>
+            <blockquote className="mb-3 p-2 rounded bg-purple-500/10 border-l-2 border-purple-400/30 text-wall-muted text-xs italic">
+              {branchQuery}
+            </blockquote>
+            {branchResult && (
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1 markdown-body max-h-[500px] overflow-y-auto p-4 rounded-xl bg-wall-surface/50 border border-wall-border/30">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{branchResult}</ReactMarkdown>
+                </div>
+                {branchTopoReady && (
+                  <div className="lg:w-[400px] h-[350px] rounded-xl overflow-hidden border border-wall-border/30">
+                    <TopologyViewer nodes={branchTopoNodes} edges={branchTopoEdges} ready={true}
+                      onDrillDown={handleDrillDown} />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 现实结果反馈 */}
       <div className="max-w-6xl mx-auto px-6 pb-12">
@@ -137,7 +219,6 @@ export default function EventDetailPage() {
             这个决策在现实中后来怎样了？分享真实结果，帮助其他人看到 AI 推演和现实的差距。
           </p>
 
-          {/* 已有反馈 */}
           {event.outcomes?.length > 0 && (
             <div className="space-y-3 mb-6">
               {event.outcomes.map((o: any) => (
@@ -157,12 +238,9 @@ export default function EventDetailPage() {
             </div>
           )}
 
-          {/* 提交反馈 */}
           {outcomeMsg && <p className="text-xs text-wall-muted mb-3">{outcomeMsg}</p>}
           <div className="space-y-3">
-            <textarea
-              value={outcomeText}
-              onChange={(e) => setOutcomeText(e.target.value)}
+            <textarea value={outcomeText} onChange={(e) => setOutcomeText(e.target.value)}
               placeholder="写下这个决策在现实中真实发生了什么..."
               className="w-full h-24 bg-wall-surface border border-wall-border rounded-xl p-4 text-wall-text placeholder-wall-muted/40 resize-none focus:outline-none focus:border-[#818cf8]/50 text-sm"
             />
