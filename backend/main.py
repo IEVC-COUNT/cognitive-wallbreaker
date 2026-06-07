@@ -21,6 +21,7 @@ from typing import Optional, List
 from fastapi import FastAPI, Request, Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
+from openai import AsyncOpenAI
 
 from engine import (
     CognitiveEngine,
@@ -468,9 +469,10 @@ async def health():
         "base_url": BASE_URL,
         "endpoints": {
             "v4": "/api/simulate",
+            "v4_json": "/api/simulate/json",
             "v5_full": "/api/simulate/v5",
             "v5_fast": "/api/simulate/v5/fast",
-            "v4_json": "/api/simulate/json",
+            "dual": "/api/simulate/dual",
         },
         "agents": {
             "full": ["psychology", "interest", "class", "game", "soul", "devil", "judge"],
@@ -795,6 +797,254 @@ async def simulate_v5_fast(
 
 
 # ═══════════════════════════════════════════
+# V5.0 双路推演: 乐观路径 vs 悲观路径
+# ═══════════════════════════════════════════
+
+# 双路推演专用 System Prompt 模板
+DUAL_PATH_SYSTEM_TEMPLATE = """# Role: 认知破壁机 V5.0 - 双路对比推演引擎
+
+你是"认知破壁机"推演引擎。你的任务是对用户的决策进行深度分析。
+
+{path_instruction}
+
+# 当前用户档案
+{memory_context}
+
+# Core Workflow (五刀推演 + 拓扑沙盘):
+
+## Part 1: 文本解剖 (五刀推演)
+
+### 🔪 第一刀：心理防御与认知盲区（内因）
+- 用户正在使用的心理防御机制
+- 至少 3 个"自我欺骗"信号
+> 💀 破壁人点评：[20字]
+
+### 🔪 第二刀：利益链条与收割逻辑（外因）
+- 谁是庄家？谁在割韭菜？
+- 具体利益流向说明
+> 💀 破壁人点评：[20字]
+
+### 🔪 第三刀：阶层筹码与容错率计算（现实）
+- 底线压力测试，量化毁灭性打击
+> 💀 破壁人点评：[20字]
+
+### 🔪 第四刀：灰度博弈与反向操作（行动）
+- 2 条具体可执行的博弈策略
+> 💀 破壁人点评：[20字]
+
+### 🔪 第五刀：终极破壁拷问（灵魂暴击）
+- 一个直击社会现实与个人命运的问题
+> 💀 破壁人点评：[20字]
+
+---
+
+## Part 2: 拓扑沙盘数据
+
+你必须输出一个合法的 JSON 代码块。
+
+```json
+{{
+  "topology_version": "2.0",
+  "nodes": [
+    {{ "id": "n1", "label": "核心决策", "type": "core", "description": "当前核心决策" }},
+    {{ "id": "n2", "label": "风险分支", "type": "risk", "description": "高危后果" }},
+    {{ "id": "n3", "label": "安全路径", "type": "safe", "description": "可行策略" }}
+  ],
+  "edges": [
+    {{ "source": "n1", "target": "n2", "label": "导致" }},
+    {{ "source": "n1", "target": "n3", "label": "博弈出口" }}
+  ]
+}}
+```
+
+节点类型: core/risk/safe/social/psychology/future，总数不少于8个节点。
+JSON 必须合法，禁止注释，禁止多余逗号。用中文输出，1500-2500字。"""
+
+DUAL_PATH_A_INSTRUCTION = """**本路径视角：乐观/积极路径 (Path A)**
+你需要在分析中找到决策中的**机会窗口**和**潜在上升空间**。
+虽然保持冷静和现实，但请重点指出：
+1. 如果成功，最大的收益是什么
+2. 有哪些被用户忽略的积极因素
+3. 社会/行业趋势中有利于此决策的信号
+4. 博弈策略重点放在"如何提高成功概率"
+5. 灵魂拷问侧重"如果不做会后悔什么"
+在拓扑沙盘中，至少包含 2 个 "future" 类型的正面衍生节点。"""
+
+DUAL_PATH_B_INSTRUCTION = """**本路径视角：悲观/防御路径 (Path B)**
+你需要在分析中重点揭示决策中的**毁灭性风险**和**隐藏陷阱**。
+保持极度冷峻，请重点指出：
+1. 最坏情况下的具体损失（量化）
+2. 有哪些被用户忽视的危险信号
+3. 社会/行业趋势中不利于此决策的信号
+4. 博弈策略重点放在"如何止损和退出"
+5. 灵魂拷问侧重"你输得起吗"
+在拓扑沙盘中，至少包含 2 个 "risk" 类型的高危节点。"""
+
+
+@app.post("/api/simulate/dual")
+async def simulate_dual(
+    request: Request,
+    event: str = Form(default="", description="用户输入的决策事件文本"),
+    user_id: str = Form(default="default", description="用户标识"),
+    images: Optional[List[UploadFile]] = File(default=None),
+):
+    """
+    V5.0 双路对比推演 — 乐观路径 vs 悲观路径并行推演
+
+    两条路径使用不同的视角同时分析同一决策，结果以 SSE 流式返回。
+    每条路径独立输出文本内容和拓扑沙盘。
+
+    SSE 事件类型：
+      - meta:          元信息（路径标签）
+      - content:       推演内容增量（含 path 标识 a/b）
+      - topology:      拓扑沙盘数据（含 path 标识 a/b）
+      - done:          单路径完成（含 path 标识 a/b）
+      - error:         单路径错误（含 path 标识 a/b）
+    """
+    if not event.strip() and (not images or len(images) == 0):
+        async def error_stream():
+            yield f"data: {json.dumps({'type': 'error', 'text': '请至少提供文本描述或图片'})}\n\n"
+        return StreamingResponse(
+            error_stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache"},
+        )
+
+    if images:
+        images = images[:5]
+
+    images_base64 = await process_uploaded_images(images)
+
+    # 处理 OCR
+    enhanced_text = event.strip()
+    if images_base64:
+        ocr_texts = []
+        for img_b64 in images_base64:
+            ocr_result = _ocr_single_image(img_b64)
+            if ocr_result:
+                ocr_texts.append(ocr_result)
+        if ocr_texts:
+            ocr_block = "\n\n---\n📷 **图片OCR识别内容**：\n"
+            for i, t in enumerate(ocr_texts):
+                ocr_block += f"\n[图片{i+1}]:\n{t}\n"
+            ocr_block += "\n请结合以上图片中的文字信息进行分析。\n---"
+            enhanced_text += ocr_block
+
+    if not enhanced_text.strip():
+        enhanced_text = "请分析我当前面临的决策困境"
+
+    # 构建用户记忆上下文
+    mem = get_memory_manager(user_id)
+    memory_text = mem.get_user_profile()
+    recent_memories = await mem.search(enhanced_text, limit=5)
+    recent_text = "\n".join([
+        f"- {m['content']}" for m in recent_memories
+    ]) if recent_memories else "无相关历史"
+    memory_context = f"{memory_text}\n\n## 相关历史\n{recent_text}"
+
+    # 构建双路 System Prompt
+    system_a = DUAL_PATH_SYSTEM_TEMPLATE.format(
+        path_instruction=DUAL_PATH_A_INSTRUCTION,
+        memory_context=memory_context,
+    )
+    system_b = DUAL_PATH_SYSTEM_TEMPLATE.format(
+        path_instruction=DUAL_PATH_B_INSTRUCTION,
+        memory_context=memory_context,
+    )
+
+    # 创建独立客户端
+    client_a = AsyncOpenAI(api_key=API_KEY, base_url=BASE_URL)
+    client_b = AsyncOpenAI(api_key=API_KEY, base_url=BASE_URL)
+
+    async def run_path(path: str, system_prompt: str, client: AsyncOpenAI):
+        """运行单条推演路径，将结果放入队列"""
+        try:
+            stream = await client.chat.completions.create(
+                model=MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": enhanced_text},
+                ],
+                temperature=0.7,
+                max_tokens=2560,
+                stream=True,
+            )
+            full_text = ""
+            async for chunk in stream:
+                delta = chunk.choices[0].delta
+                if delta.content:
+                    full_text += delta.content
+                    await q.put({
+                        "type": "content",
+                        "path": path,
+                        "text": delta.content,
+                    })
+
+            # 提取拓扑
+            topology = parse_topology_v2(full_text)
+
+            await q.put({
+                "type": "done",
+                "path": path,
+                "length": len(full_text),
+                "elapsed_ms": 0,
+            })
+
+            if topology:
+                await q.put({
+                    "type": "topology",
+                    "path": path,
+                    "data": topology,
+                })
+
+        except Exception as e:
+            await q.put({
+                "type": "error",
+                "path": path,
+                "text": str(e),
+            })
+
+    q = asyncio.Queue()
+
+    async def event_stream():
+        # 先发送元信息
+        yield f"data: {json.dumps({'type': 'meta', 'path_a_label': '🌅 乐观路径 · 机会窗口', 'path_b_label': '🌑 悲观路径 · 风险防御'}, ensure_ascii=False)}\n\n"
+
+        # 并行启动两条路径
+        task_a = asyncio.create_task(run_path("a", system_a, client_a))
+        task_b = asyncio.create_task(run_path("b", system_b, client_b))
+
+        done_count = 0
+        while done_count < 2:
+            if await request.is_disconnected():
+                task_a.cancel()
+                task_b.cancel()
+                break
+
+            try:
+                msg = await asyncio.wait_for(q.get(), timeout=0.1)
+                if msg["type"] == "done":
+                    done_count += 1
+                yield f"data: {json.dumps(msg, ensure_ascii=False)}\n\n"
+            except asyncio.TimeoutError:
+                continue
+
+        # 等待两个任务完全结束
+        await asyncio.gather(task_a, task_b, return_exceptions=True)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+            "Access-Control-Allow-Origin": "*",
+        },
+    )
+
+
+# ═══════════════════════════════════════════
 # OCR 辅助函数（V5.0 从 engine_v4 复用）
 # ═══════════════════════════════════════════
 
@@ -839,7 +1089,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8900,
+        port=8920,
         reload=True,
         log_level="info",
     )
