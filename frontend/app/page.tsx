@@ -569,7 +569,7 @@ function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topo
     setDrillThinking(false)
   }
   return (
-    <div className="flex-1 flex flex-col min-w-0 max-w-[50%]" style={{ flexBasis: 0 }}>
+    <div className="w-1/2 flex flex-col min-w-0 flex-shrink-0">
       <div className="flex items-center gap-2 px-4 py-2 border-b border-wall-border/30 shrink-0" style={{ borderLeft: `3px solid ${borderColor}` }}>
         <span className="text-xs font-semibold text-wall-text truncate">{label}</span>
         {thinking && !output && <Loader2 size={12} className="animate-spin text-wall-muted ml-auto" />}
@@ -1144,7 +1144,7 @@ export default function Home() {
             </div>
           </div>
           {/* 双栏输出 */}
-          <div className="flex-1 flex min-h-0">
+          <div className="flex-1 flex min-h-0 min-w-0">
             <DualColumn label={dual.labels.a} output={dual.outputA} thinking={dual.running && !dual.outputA}
               stats={dual.statsA} topoNodes={dual.topoNodesA} topoEdges={dual.topoEdgesA}
               topoReady={dual.topoReadyA} error={dual.error} borderColor="#6366f1"
