@@ -518,16 +518,56 @@ function ImageUploader({ images, onAdd, onRemove, disabled }: {
 /* ══════════════════════════════════════════════════════════════
    双路推演 — 单列输出组件
    ══════════════════════════════════════════════════════════════ */
-function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topoReady, error, borderColor, onDrillDown }: {
+function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topoReady, error, borderColor }: {
   label: string; output: string; thinking: boolean
   stats: { length: number; elapsed_ms: number } | null
   topoNodes: Node[]; topoEdges: Edge[]; topoReady: boolean
   error: string; borderColor: string
-  onDrillDown?: (node: Node) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
-  useEffect(() => { if (ref.current) ref.current.scrollTop = ref.current.scrollHeight }, [output])
+  const [drillOutput, setDrillOutput] = useState('')
+  const [drillThinking, setDrillThinking] = useState(false)
+  const [drillTopoNodes, setDrillTopoNodes] = useState<Node[]>([])
+  const [drillTopoEdges, setDrillTopoEdges] = useState<Edge[]>([])
+  const [drillTopoReady, setDrillTopoReady] = useState(false)
+  const drillAbortRef = useRef<AbortController | null>(null)
+  useEffect(() => { if (ref.current) ref.current.scrollTop = ref.current.scrollHeight }, [output, drillOutput])
+
+  const handleDrillDown = async (node: Node) => {
+    const query = `基于之前的推演，我选择深入分析这个分支：「${(node.data as any)?.label}」——${(node.data as any)?.description}。请对此进行更深入的破壁推演。`
+    drillAbortRef.current?.abort()
+    const controller = new AbortController()
+    drillAbortRef.current = controller
+    setDrillOutput('')
+    setDrillThinking(true)
+    setDrillTopoReady(false)
+    const formData = new FormData(); formData.append('event', query); formData.append('user_id', 'default')
+    try {
+      const resp = await fetch('/api/simulate', { method: 'POST', body: formData, signal: controller.signal })
+      if (!resp.ok) throw new Error('HTTP ' + resp.status)
+      const reader = resp.body?.getReader(); if (!reader) return
+      const decoder = new TextDecoder(); let buffer = ''; let full = ''
+      while (true) {
+        const { done, value } = await reader.read(); if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n'); buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try { const msg = JSON.parse(line.slice(6))
+            if (msg.type === 'content') { full += msg.text || ''; setDrillOutput(full) }
+            else if (msg.type === 'topology' && msg.data?.nodes) {
+              const rn = msg.data.nodes.map((n: any, i: number) => ({ id: n.id, type: 'glowNode', data: { label: n.label, description: n.description || '', nodeType: n.type || 'core' }, position: { x: i * 200, y: i * 100 } }))
+              const re = msg.data.edges.map((e: any, i: number) => ({ id: `${e.source}-${e.target}-${i}`, source: e.source, target: e.target, label: e.label || '', markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' }, style: { stroke: '#334155', strokeWidth: 1.5 }, labelStyle: { fill: '#64748b', fontSize: 10 } }))
+              const { nodes, edges } = layoutTopology(rn, re)
+              setDrillTopoNodes(nodes); setDrillTopoEdges(edges); setDrillTopoReady(true)
+            }
+          } catch { }
+        }
+      }
+    } catch (e: any) { if (e.name !== 'AbortError') setDrillOutput(`延伸失败: ${e.message}`) }
+    setDrillThinking(false)
+  }
   return (
     <div className="flex-1 flex flex-col min-w-0 max-w-[50%]" style={{ flexBasis: 0 }}>
       <div className="flex items-center gap-2 px-4 py-2 border-b border-wall-border/30 shrink-0" style={{ borderLeft: `3px solid ${borderColor}` }}>
@@ -568,12 +608,31 @@ function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topo
               </div>
               <p className="text-wall-text font-semibold text-sm mb-1">{(selectedNode.data as any)?.label}</p>
               <p className="text-wall-muted text-xs mb-3">{(selectedNode.data as any)?.description}</p>
-              {onDrillDown && (
-                <button onClick={() => { onDrillDown(selectedNode); setSelectedNode(null) }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[#818cf8]/10 border border-[#818cf8]/30 rounded-xl text-[#818cf8] text-xs hover:bg-[#818cf8]/20 transition-all">
-                  <Share2 size={12} /> 沿此分支继续推演
-                </button>
-              )}
+              <button onClick={() => { handleDrillDown(selectedNode); setSelectedNode(null) }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[#818cf8]/10 border border-[#818cf8]/30 rounded-xl text-[#818cf8] text-xs hover:bg-[#818cf8]/20 transition-all">
+                <Share2 size={12} /> 在此路径内延伸推演
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {/* 路径内延伸推演结果 */}
+      {(drillOutput || drillThinking) && (
+        <div className="border-t-2 border-purple-500/30 shrink-0 max-h-[300px] overflow-y-auto">
+          <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/[0.05]">
+            <span className="text-[10px] text-purple-400 font-mono">🔀 分支延伸</span>
+            {drillThinking && <Loader2 size={10} className="animate-spin text-purple-400" />}
+          </div>
+          {drillOutput && <div className="p-3 markdown-body text-xs leading-relaxed"><ReactMarkdown remarkPlugins={[remarkGfm]}>{drillOutput}</ReactMarkdown></div>}
+          {drillTopoReady && (
+            <div className="h-48 relative border-t border-wall-border/30">
+              <ReactFlow nodes={drillTopoNodes} edges={drillTopoEdges} nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.2 }}
+                minZoom={0.2} maxZoom={1.2} nodesDraggable={false} nodesConnectable={false}
+                onNodeClick={(_, node) => setSelectedNode(node)}
+                defaultEdgeOptions={{ type: 'smoothstep', animated: true, style: { stroke: '#334155', strokeWidth: 1 } }}
+                proOptions={{ hideAttribution: true }}>
+                <Background color="#1e2a3a" gap={16} />
+              </ReactFlow>
             </div>
           )}
         </div>
@@ -1089,12 +1148,12 @@ export default function Home() {
             <DualColumn label={dual.labels.a} output={dual.outputA} thinking={dual.running && !dual.outputA}
               stats={dual.statsA} topoNodes={dual.topoNodesA} topoEdges={dual.topoEdgesA}
               topoReady={dual.topoReadyA} error={dual.error} borderColor="#6366f1"
-              onDrillDown={(node) => { setMode('single'); drillDown(node) }} />
+ />
             <div className="w-px bg-wall-border/50" />
             <DualColumn label={dual.labels.b} output={dual.outputB} thinking={dual.running && !dual.outputB}
               stats={dual.statsB} topoNodes={dual.topoNodesB} topoEdges={dual.topoEdgesB}
               topoReady={dual.topoReadyB} error="" borderColor="#f59e0b"
-              onDrillDown={(node) => { setMode('single'); drillDown(node) }} />
+ />
           </div>
         </>)}
         </div>
