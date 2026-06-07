@@ -559,7 +559,7 @@ function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topo
           </ReactFlow>
           <div className="absolute top-2 left-2 bg-wall-surface/80 backdrop-blur border border-wall-border rounded px-2 py-0.5 text-wall-dim text-[10px] z-10 pointer-events-none">拓扑 · 点光查看详情</div>
           {selectedNode && (
-            <div className="absolute bottom-4 right-4 w-64 bg-wall-surface/95 backdrop-blur border border-wall-border rounded-2xl p-4 z-10 shadow-2xl">
+            <div className="absolute bottom-4 left-4 right-4 bg-wall-surface/95 backdrop-blur border border-wall-border rounded-2xl p-4 z-10 shadow-2xl">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold" style={{ color: TYPE_STYLES[(selectedNode.data as any)?.nodeType]?.border || '#6366f1' }}>
                   {TYPE_STYLES[(selectedNode.data as any)?.nodeType]?.label || '节点'}
