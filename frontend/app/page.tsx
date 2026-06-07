@@ -493,7 +493,7 @@ function ImageUploader({ images, onAdd, onRemove, disabled }: {
           const files = Array.from(e.target.files || [])
           if (files.length) onAdd(files.slice(0, 5 - images.length))
           if (inputRef.current) inputRef.current.value = ''
-        }} className="hidden" disabled={disabled} />
+        }} className="hidden" disabled={disabled} title="上传图片" aria-label="上传图片文件" />
         <Upload size={20} className="mx-auto mb-1 text-wall-muted" />
         <p className="text-wall-muted text-xs">拖拽图片或点击上传</p>
         <p className="text-wall-dim text-[10px] mt-1">PNG/JPEG/WebP · 最多5张</p>
@@ -503,7 +503,7 @@ function ImageUploader({ images, onAdd, onRemove, disabled }: {
           {images.map((file, idx) => (
             <div key={idx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-wall-border">
               <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
-              <button onClick={() => onRemove(idx)} disabled={disabled}
+              <button onClick={() => onRemove(idx)} disabled={disabled} title="移除图片" aria-label="移除图片"
                 className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/60 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
                 <X size={12} />
               </button>
@@ -673,16 +673,16 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* ── V6.0 顶部栏 ── */}
+      {/* ── V6.0 顶部导航 ── */}
       <nav className="sticky top-0 z-50 backdrop-blur border-b border-wall-border/50 bg-wall-bg/80">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-12">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchHistory() }}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-all ${
                 showHistory ? 'border-[#818cf8]/50 bg-[#818cf8]/10 text-[#818cf8]' : 'border-wall-border text-wall-muted hover:text-wall-text hover:border-[#818cf8]/30'
               }`}>
-              <History size={14} />
-              <span>历史记录</span>
+              <History size={13} />
+              <span>历史</span>
               {historyRecords.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-[#818cf8]/20 text-[#818cf8] text-[10px] font-mono">{historyRecords.length}</span>}
             </button>
             <div className="flex items-center gap-0.5 border border-wall-border rounded-lg p-0.5">
@@ -692,19 +692,19 @@ export default function Home() {
                 className={`px-2.5 py-1 rounded-md text-xs transition-all ${mode === 'dual' ? 'bg-[#818cf8]/20 text-[#818cf8]' : 'text-wall-muted hover:text-wall-text'}`}>双路</button>
             </div>
             <button onClick={() => { setV5Mode(!v5Mode); reset() }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all ${
                 v5Mode ? 'border-purple-500/50 bg-purple-500/10 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.15)]' : 'border-wall-border text-wall-muted hover:text-wall-text hover:border-[#818cf8]/30'
               }`}>
-              <span className="text-xs">{v5Mode ? '😈' : '🧠'}</span>
-              <span>{v5Mode ? 'V5.0 多Agent' : 'V4.0'}</span>
+              <span className="text-xs">{v5Mode ? '😈' : '🔪'}</span>
+              <span>{v5Mode ? '七Agent辩论' : '五刀推演'}</span>
             </button>
             <h1 className="text-sm font-semibold tracking-wide">
               <span className="text-[#818cf8]">认知破壁机</span>
-              <span className={`ml-2 text-xs font-normal ${v5Mode ? 'text-purple-400' : 'text-wall-muted'}`}>{v5Mode ? 'V5.0 多Agent' : 'V6.0'}</span>
+              <span className="ml-1.5 text-[10px] font-normal text-wall-dim">V6.0</span>
             </h1>
           </div>
           <p className="text-wall-dim text-[10px] hidden sm:block">
-            {mode === 'dual' ? '双路对比推演' : v5Mode ? '七Agent对抗 · 魔鬼代言人挑刺' : '现实主义博弈引擎 · AI决策推演'}
+            {mode === 'dual' ? '双路对比' : v5Mode ? '七Agent对抗·魔鬼代言人' : 'AI决策推演·拓扑沙盘'}
           </p>
         </div>
       </nav>
@@ -721,7 +721,7 @@ export default function Home() {
                 <Clock size={14} className="text-wall-muted" />
                 <span className="text-wall-muted text-xs font-mono tracking-wider">推演历史</span>
               </div>
-              <button onClick={() => setShowHistory(false)} className="text-wall-dim hover:text-wall-text transition-colors">
+              <button onClick={() => setShowHistory(false)} title="关闭历史面板" aria-label="关闭历史面板" className="text-wall-dim hover:text-wall-text transition-colors">
                 <ChevronLeft size={16} />
               </button>
             </div>
@@ -750,7 +750,7 @@ export default function Home() {
                   <button
                     onClick={(e) => deleteHistoryRecord(record.id, e)}
                     className="shrink-0 p-1 rounded-md text-wall-dim hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all"
-                    title="删除"
+                    title="删除此记录" aria-label="删除此记录"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -782,9 +782,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 左栏：输入 — V6.0 样式 */}
-        <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative border-r border-wall-border/50 bg-gradient-to-b from-transparent to-[#818cf8]/[0.02]">
+        {/* 左栏：输入 */}
+        <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative border-r border-wall-border/50">
           <div className="w-full max-w-xl space-y-6">
+            {/* 标题 V6.0 */}
             <div className="text-center space-y-2">
               <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
                 <span className="bg-gradient-to-r from-[#818cf8] to-[#a78bfa] bg-clip-text text-transparent">认知破壁机</span>
@@ -793,9 +794,9 @@ export default function Home() {
               <div className="flex items-center justify-center gap-2 mt-1">
                 <span className={`px-2 py-0.5 rounded-md border text-xs font-mono transition-all ${
                   v5Mode ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' : 'bg-[#818cf8]/10 border-[#818cf8]/20 text-[#818cf8]'
-                }`}>{v5Mode ? 'V5.0' : 'V6.0'}</span>
+                }`}>{v5Mode ? '七Agent' : 'V6.0'}</span>
                 <span className="text-wall-dim text-xs">
-                  {v5Mode ? '七Agent对抗 · 魔鬼代言人' : '现实主义博弈引擎 · 拓扑沙盘'}
+                  {v5Mode ? '魔鬼代言人 · 终审判决' : '五刀解剖 · 拓扑沙盘'}
                 </span>
               </div>
             </div>
@@ -818,7 +819,7 @@ export default function Home() {
               </button>
               <button onClick={() => { reset(); setImages([]) }}
                 disabled={!output && !error}
-                className="flex items-center gap-2 px-4 py-3 border border-wall-border rounded-xl text-wall-muted hover:text-wall-text hover:border-[#818cf8]/30 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-sm">
+                className="flex items-center gap-2 px-4 py-3 border border-wall-border rounded-xl text-wall-muted hover:text-wall-text hover:border-wall-accent/30 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-sm">
                 <Trash2 size={14} /> 重置
               </button>
             </div>
@@ -843,7 +844,7 @@ export default function Home() {
                 </span>
               )}
               {topoReady && (
-                <button onClick={() => setShowTopo(!showTopo)}
+                <button onClick={() => setShowTopo(!showTopo)} title={showTopo ? '隐藏拓扑图' : '显示拓扑图'} aria-label={showTopo ? '隐藏拓扑图' : '显示拓扑图'}
                   className={`text-xs px-2 py-1 rounded-lg border transition-all ${
                     showTopo ? 'border-wall-accent/50 bg-wall-accent/10 text-wall-accent'
                             : 'border-wall-border text-wall-muted'
@@ -856,32 +857,64 @@ export default function Home() {
 
           {/* ── V5.0 多智能体状态面板 ── */}
           {v5Mode && thinking && Object.keys(v5Agents).length > 0 && (
-            <div className="px-4 py-3 border-b border-wall-border/30 bg-purple-500/[0.02]">
-              <div className="text-wall-dim text-[10px] mb-2 font-mono tracking-wider">😈 多智能体对抗推演中...</div>
+            <div className="px-4 py-3 border-b border-wall-border/30 bg-purple-500/[0.02] relative overflow-hidden">
+              {/* 扫描线 */}
+              <div className="scan-overlay opacity-30" />
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-wall-dim text-[10px] font-mono tracking-wider">🔪 多智能体对抗推演</span>
+                <span className="flex-1 h-px bg-gradient-to-r from-purple-500/30 to-transparent" />
+                <span className="flex items-center gap-1 text-purple-400/60 text-[9px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+                  进行中
+                </span>
+              </div>
               <div className="grid grid-cols-4 gap-2">
-                {Object.entries(v5Agents).map(([key, agent]) => {
-                  const statusColors: Record<string, string> = {
-                    pending: 'border-wall-border bg-wall-surface/30 text-wall-dim',
-                    running: 'border-yellow-500/30 bg-yellow-500/5 text-yellow-400',
-                    done: 'border-green-500/30 bg-green-500/5 text-green-400',
-                    error: 'border-red-500/30 bg-red-500/5 text-red-400',
-                  }
-                  const statusIcons: Record<string, string> = {
-                    pending: '⏳',
-                    running: '🔄',
-                    done: '✅',
-                    error: '❌',
-                  }
+                {Object.entries(v5Agents).map(([key, agent], idx) => {
+                  const isDevil = key === 'devil'
+                  const isJudge = key === 'judge'
+                  const isRunning = agent.status === 'running'
+                  const isDone = agent.status === 'done'
+                  const isError = agent.status === 'error'
+                  const isPending = agent.status === 'pending'
+
+                  let borderAnim = ''
+                  let extraAnim = ''
+                  if (isPending) borderAnim = 'animate-border-pending'
+                  else if (isRunning) borderAnim = 'animate-border-running'
+                  else if (isDone && isJudge) borderAnim = 'animate-border-rainbow'
+                  else if (isDone && isDevil) { borderAnim = 'animate-border-done'; extraAnim = 'animate-devil-shake' }
+                  else if (isDone) borderAnim = 'animate-border-done'
+                  else if (isError) borderAnim = 'animate-border-error'
+
+                  const bgClass = isDone
+                    ? 'bg-green-500/8'
+                    : isRunning
+                    ? 'bg-yellow-500/8'
+                    : isError
+                    ? 'bg-red-500/8'
+                    : isPending
+                    ? 'bg-wall-surface/20'
+                    : 'bg-wall-surface/20'
+
+                  const textClass = isDone
+                    ? 'text-green-300'
+                    : isRunning
+                    ? 'text-yellow-300'
+                    : isError
+                    ? 'text-red-300'
+                    : 'text-wall-dim'
+
+                  const statusIcon = isDone ? '✅' : isRunning ? '🔄' : isError ? '❌' : '⏳'
+
                   return (
                     <div
                       key={key}
-                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-[10px] transition-all ${
-                        statusColors[agent.status] || statusColors.pending
-                      } ${agent.status === 'done' ? 'shadow-[0_0_8px_rgba(34,197,94,0.1)]' : ''}`}
+                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border-2 text-[10px] ${bgClass} ${textClass} ${borderAnim} ${extraAnim}`}
+                      style={{ animationDelay: `${idx * 60}ms` }}
                     >
-                      <span className="text-xs">{agent.emoji}</span>
+                      <span className={`text-xs ${isRunning ? 'animate-pulse' : ''}`}>{agent.emoji}</span>
                       <span className="truncate flex-1">{agent.name}</span>
-                      <span>{statusIcons[agent.status] || '⏳'}</span>
+                      <span className="text-[9px]">{statusIcon}</span>
                     </div>
                   )
                 })}
@@ -892,7 +925,8 @@ export default function Home() {
           {/* 输出内容区 */}
           <div className="flex-1 flex flex-col min-h-0">
             {/* 文本输出 */}
-            <div ref={outputRef} className={`overflow-y-auto p-6 lg:p-10 scroll-smooth ${showTopo && topoReady ? 'flex-1 border-b border-wall-border' : 'flex-1'}`}>
+            <div ref={outputRef} className={`overflow-y-auto p-6 lg:p-10 scroll-smooth relative ${showTopo && topoReady ? 'flex-1 border-b border-wall-border' : 'flex-1'}`}>
+              {thinking && <div className="scan-overlay opacity-20" />}
               {error && (
                 <div className="flex items-start gap-3 p-4 bg-red-500/5 border border-red-500/20 rounded-xl">
                   <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
@@ -900,23 +934,38 @@ export default function Home() {
                 </div>
               )}
               {thinking && !output && (
-                <div className="flex flex-col items-center justify-center h-full space-y-4">
-                  <div className="relative">
-                    <div className="w-20 h-20 rounded-full border-2 border-wall-accent/20 border-t-wall-accent animate-spin" />
-                    <Brain size={24} className="absolute inset-0 m-auto text-wall-accent/60 animate-pulse-slow" />
+                <div className="flex flex-col items-center justify-center h-full space-y-6">
+                  {/* 多层旋转光环 */}
+                  <div className="relative w-24 h-24">
+                    <div className="absolute inset-0 rounded-full border border-wall-accent/10 animate-spin" style={{ animationDuration: '3s' }} />
+                    <div className="absolute inset-2 rounded-full border-2 border-wall-accent/20 border-t-wall-accent animate-spin" style={{ animationDuration: '1.5s' }} />
+                    <div className="absolute inset-4 rounded-full border border-purple-500/15 border-t-purple-400/40 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }} />
+                    <Brain size={28} className="absolute inset-0 m-auto text-wall-accent/50 animate-pulse-slow" />
                   </div>
                   <p className="text-wall-muted text-sm animate-scan">{loadingText}</p>
+                  {/* 能量粒子线 */}
+                  <div className="flex gap-1 items-center">
+                    {[0, 1, 2].map(i => (
+                      <div key={i} className="w-1 h-1 rounded-full bg-wall-accent/40 animate-pulse"
+                        style={{ animationDelay: `${i * 0.3}s`, animationDuration: '1.5s' }} />
+                    ))}
+                  </div>
                 </div>
               )}
               {output && (
-                <div className="markdown-body">
+                <div className={`markdown-body ${v5Mode ? 'animate-judge-reveal' : 'animate-fade-in-up'}`}>
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{output}</ReactMarkdown>
                 </div>
               )}
               {!output && !thinking && !error && (
-                <div className="flex flex-col items-center justify-center h-full space-y-3 opacity-30">
-                  <Brain size={40} className="text-wall-accent" />
-                  <p className="text-wall-muted text-sm">输入决策，开始五刀推演...</p>
+                <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-20">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border border-wall-accent/10 animate-spin" style={{ animationDuration: '6s' }} />
+                    <Brain size={32} className="absolute inset-0 m-auto text-wall-accent/40" />
+                  </div>
+                  <p className="text-wall-muted text-sm font-mono tracking-wider">
+                    {v5Mode ? '🔪 七Agent对抗推演待命' : '输入决策，开始五刀推演...'}
+                  </p>
                 </div>
               )}
             </div>
@@ -936,7 +985,7 @@ export default function Home() {
                   defaultEdgeOptions={{
                     type: 'smoothstep',
                     animated: true,
-                    style: { stroke: '#334155', strokeWidth: 1.5 },
+                    style: { stroke: '#475569', strokeWidth: 1.5, strokeDasharray: '6 3' },
                   }}
                   proOptions={{ hideAttribution: true }}
                 >
@@ -960,7 +1009,7 @@ export default function Home() {
                       }}>
                         {TYPE_STYLES[(selectedNode.data as any)?.nodeType]?.label || '节点'}
                       </span>
-                      <button onClick={() => setSelectedNode(null)} className="text-wall-muted hover:text-wall-text">
+                      <button onClick={() => setSelectedNode(null)} title="关闭节点详情" aria-label="关闭节点详情" className="text-wall-muted hover:text-wall-text">
                         <X size={14} />
                       </button>
                     </div>
@@ -972,6 +1021,7 @@ export default function Home() {
                     </p>
                     <button
                       onClick={() => { drillDown(selectedNode); setSelectedNode(null) }}
+                      title="沿此分支深入推演" aria-label="沿此分支深入推演"
                       className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-wall-accent/10 border border-wall-accent/30 rounded-xl text-wall-accent text-xs hover:bg-wall-accent/20 transition-all"
                     >
                       <Share2 size={12} /> 沿此分支继续推演 (What-If)

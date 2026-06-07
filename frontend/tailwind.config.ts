@@ -14,7 +14,7 @@ const config: Config = {
           bg: '#080c14',
           surface: '#0f1624',
           border: '#1e2a3a',
-          accent: '#64748b',
+          accent: '#818cf8',
           glow: '#818cf8',
           text: '#e2e8f0',
           muted: '#64748b',
