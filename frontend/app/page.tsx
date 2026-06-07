@@ -1194,8 +1194,8 @@ export default function Home() {
               )}
             </div>
           </div>
-          {/* 双栏输出 — Grid 1:1 强制定宽 */}
-          <div className="flex-1 grid grid-cols-2 min-h-0 min-w-0">
+          {/* 双路输出 — 上下两路竖排 */}
+          <div className="flex-1 flex flex-col min-h-0">
             <DualColumn label={dual.labels.a} output={dual.outputA} thinking={dual.running && !dual.outputA}
               stats={dual.statsA} topoNodes={dual.topoNodesA} topoEdges={dual.topoEdgesA}
               topoReady={dual.topoReadyA} error={dual.error} borderColor="#6366f1"
