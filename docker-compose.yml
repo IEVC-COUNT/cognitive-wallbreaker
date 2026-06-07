@@ -3,8 +3,6 @@
 # 停止: docker compose down
 # 查看: docker compose logs -f
 
-version: "3.8"
-
 services:
   # ──── 后端 API ────
   backend:
