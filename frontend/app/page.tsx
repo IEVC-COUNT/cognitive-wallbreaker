@@ -529,8 +529,8 @@ function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topo
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   useEffect(() => { if (ref.current) ref.current.scrollTop = ref.current.scrollHeight }, [output])
   return (
-    <div className="flex-1 flex flex-col min-w-0">
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-wall-border/30" style={{ borderLeft: `3px solid ${borderColor}` }}>
+    <div className="flex-1 flex flex-col min-w-0 max-w-[50%]" style={{ flexBasis: 0 }}>
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-wall-border/30 shrink-0" style={{ borderLeft: `3px solid ${borderColor}` }}>
         <span className="text-xs font-semibold text-wall-text truncate">{label}</span>
         {thinking && !output && <Loader2 size={12} className="animate-spin text-wall-muted ml-auto" />}
         {stats && <span className="text-[10px] text-wall-dim ml-auto">{stats.length}字 · {stats.elapsed_ms > 0 ? `${(stats.elapsed_ms / 1000).toFixed(1)}s` : ''}</span>}
