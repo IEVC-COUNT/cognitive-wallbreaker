@@ -517,3 +517,33 @@ async def add_outcome(
     conn.close()
 
     return {"status": "ok", "message": "现实反馈已提交"}
+
+
+# ═══════════════════════════════════════════
+# 数据采集端点
+# ═══════════════════════════════════════════
+
+@router.post("/mine")
+async def trigger_mining(max_per_source: int = 5):
+    """
+    触发多平台事件采集管道
+    从 Reddit + V2EX 采集个人决策事件，LLM筛选后自动推演入库
+
+    参数:
+      max_per_source: 每个数据源最多处理N条（默认5）
+    """
+    from data_miner import run_mining_pipeline
+    stats = await run_mining_pipeline(max_per_source=max_per_source)
+    return stats
+
+
+@router.get("/mine/sources")
+async def list_sources():
+    """列出可用的数据源"""
+    return {
+        "sources": [
+            {"id": "reddit_shouldi", "name": "Reddit r/ShouldI + r/makemychoice + r/Advice", "type": "决策子版块"},
+            {"id": "v2ex", "name": "V2EX 最新讨论", "type": "技术社区问与答"},
+        ],
+        "how_to_use": "POST /api/public/mine?max_per_source=5 触发采集",
+    }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Brain, Plus, Loader2, Search, Clock, Flame } from 'lucide-react'
+import { Brain, Plus, Loader2, Search, Clock, Flame, Database } from 'lucide-react'
 import { EventCard } from '@/components/EventCard'
 
 export default function Home() {
@@ -43,11 +43,28 @@ export default function Home() {
             AI 多智能体对抗推演引擎 · 公开个人决策平台<br />
             提交你的决策，七 Agent 公开推演，所有人可浏览学习
           </p>
-          <Link href="/submit"
-            className="inline-flex items-center gap-2 px-8 py-3 bg-[#818cf8]/10 border border-[#818cf8]/30 rounded-xl text-[#818cf8] hover:bg-[#818cf8]/20 transition-all text-sm font-medium">
-            <Plus size={18} />
-            提交决策推演
-          </Link>
+          <div className="flex items-center justify-center gap-3">
+            <Link href="/submit"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-[#818cf8]/10 border border-[#818cf8]/30 rounded-xl text-[#818cf8] hover:bg-[#818cf8]/20 transition-all text-sm font-medium">
+              <Plus size={18} />
+              提交决策推演
+            </Link>
+            <button onClick={async () => {
+              if (confirm('触发多平台事件采集？将从Reddit+V2EX采集决策数据并自动推演。')) {
+                try {
+                  alert('采集已启动，约1-2分钟完成。刷新页面查看新事件。')
+                  fetch('/api/public/mine?max_per_source=3', { method: 'POST' }).then(r => r.json()).then(d => {
+                    alert(`采集完成！采集${d.total_fetched}条，筛选${d.total_decisions}个决策，推演${d.total_deduced}个。`)
+                    window.location.reload()
+                  })
+                } catch { alert('采集启动失败') }
+              }
+            }}
+              className="inline-flex items-center gap-2 px-4 py-3 border border-green-500/30 rounded-xl text-green-400 hover:bg-green-500/10 transition-all text-xs">
+              <Database size={14} />
+              采集数据
+            </button>
+          </div>
         </div>
       </div>
 
