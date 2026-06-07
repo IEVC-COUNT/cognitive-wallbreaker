@@ -253,11 +253,39 @@ function useWallbreaker() {
     }
   }, [reset])
 
-  // 沿分支继续推演 (What-If)
-  const drillDown = useCallback((node: Node) => {
+  // 沿分支继续推演 — 路径内延伸不替换主输出
+  const [drillOutput, setDrillOutput] = useState('')
+  const [drillThinking, setDrillThinking] = useState(false)
+  const [drillTopoNodes, setDrillTopoNodes] = useNodesState([])
+  const [drillTopoEdges, setDrillTopoEdges] = useEdgesState([])
+  const [drillTopoReady, setDrillTopoReady] = useState(false)
+  const drillAbortRef = useRef<AbortController | null>(null)
+
+  const drillDown = useCallback(async (node: Node) => {
     const prompt = `基于之前的推演，我选择深入分析这个分支：「${node.data.label}」——${node.data.description}。请对此进行更深入的破壁推演。`
-    simulate(prompt, [], node.id)
-  }, [simulate])
+    drillAbortRef.current?.abort(); const c = new AbortController(); drillAbortRef.current = c
+    setDrillOutput(''); setDrillThinking(true); setDrillTopoReady(false)
+    const fd = new FormData(); fd.append('event', prompt); fd.append('user_id', 'default')
+    try { const resp = await fetch('/api/simulate',{method:'POST',body:fd,signal:c.signal})
+      if(!resp.ok) throw new Error('HTTP '+resp.status)
+      const reader = resp.body?.getReader(); if(!reader) return
+      const d = new TextDecoder(); let buf='',full=''
+      while(true){const{ done,value }=await reader.read();if(done)break
+        buf+=d.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop()||''
+        for(const l of lines){if(!l.startsWith('data: '))continue
+          try{const m=JSON.parse(l.slice(6))
+            if(m.type==='content'){full+=m.text||'';setDrillOutput(full)}
+            else if(m.type==='topology'&&m.data?.nodes){
+              const rn=m.data.nodes.map((n:any,i:number)=>({id:n.id,type:'glowNode',data:{label:n.label,description:n.description||'',nodeType:n.type||'core'},position:{x:i*200,y:i*100}}))
+              const re=m.data.edges.map((e:any,i:number)=>({id:`${e.source}-${e.target}-${i}`,source:e.source,target:e.target,label:e.label||'',markerEnd:{type:MarkerType.ArrowClosed,color:'#64748b'},style:{stroke:'#334155',strokeWidth:1.5},labelStyle:{fill:'#64748b',fontSize:10}}))
+              const{nodes,edges}=layoutTopology(rn,re);setDrillTopoNodes(nodes);setDrillTopoEdges(edges);setDrillTopoReady(true)
+            }
+          }catch{}
+        }
+      }
+    }catch(e:any){if(e.name!=='AbortError')setDrillOutput('延伸失败: '+e.message)}
+    setDrillThinking(false)
+  }, [])
 
   // ── V5.0 多智能体推演 ──
   const simulateV5 = useCallback(async (event: string, images: File[], fastMode: boolean = false) => {
@@ -462,7 +490,7 @@ function useWallbreaker() {
     }
   }, [resetDual])
 
-  return { output, thinking, error, loadingText, stats, topoNodes, topoEdges, topoReady, setTopoNodes, setTopoEdges, setOutput, setTopoReady, simulate, simulateV5, reset, drillDown, dual, simulateDual, resetDual, v5Mode, setV5Mode, v5Agents, v5Phase, v5Topology }
+  return { output, thinking, error, loadingText, stats, topoNodes, topoEdges, topoReady, setTopoNodes, setTopoEdges, setOutput, setTopoReady, simulate, simulateV5, reset, drillDown, dual, simulateDual, resetDual, v5Mode, setV5Mode, v5Agents, v5Phase, v5Topology, drillOutput, drillThinking, drillTopoNodes, drillTopoEdges, drillTopoReady }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -650,7 +678,7 @@ export default function Home() {
   const [images, setImages] = useState<File[]>([])
   const { output, thinking, error, loadingText, stats, topoNodes, topoEdges, topoReady,
     setTopoNodes, setTopoEdges, setOutput, setTopoReady, simulate, simulateV5, reset, drillDown, dual, simulateDual, resetDual,
-    v5Mode, setV5Mode, v5Agents, v5Phase } = useWallbreaker()
+    v5Mode, setV5Mode, v5Agents, v5Phase, drillOutput, drillThinking, drillTopoNodes, drillTopoEdges, drillTopoReady } = useWallbreaker()
   const outputRef = useRef<HTMLDivElement>(null)
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const [showTopo, setShowTopo] = useState(true)
@@ -1129,6 +1157,29 @@ export default function Home() {
               </div>
             )}
           </div>
+                  {/* 单路路径内延伸推演 */}
+          {(drillOutput || drillThinking) && (
+            <div className="border-t-2 border-purple-500/30 bg-purple-500/[0.02]">
+              <div className="flex items-center gap-2 px-6 py-2">
+                <span className="text-xs text-purple-400 font-mono">延伸推演</span>
+                {drillThinking && <Loader2 size={12} className="animate-spin text-purple-400" />}
+              </div>
+              <div className="px-6 pb-4 max-h-[400px] overflow-y-auto markdown-body">
+                {drillOutput && <ReactMarkdown remarkPlugins={[remarkGfm]}>{drillOutput}</ReactMarkdown>}
+              </div>
+              {drillTopoReady && (
+                <div className="h-[350px] relative border-t border-wall-border/30 mx-6 mb-4 rounded-xl overflow-hidden">
+                  <ReactFlow nodes={drillTopoNodes} edges={drillTopoEdges} nodeTypes={nodeTypes} fitView fitViewOptions={{padding:0.3}}
+                    minZoom={0.3} maxZoom={2} nodesDraggable={false} nodesConnectable={false}
+                    defaultEdgeOptions={{type:'smoothstep',animated:true,style:{stroke:'#334155',strokeWidth:1.5,strokeDasharray:'6 3'}}}
+                    proOptions={{hideAttribution:true}}>
+                    <Background color="#1e2a3a" gap={24} />
+                  </ReactFlow>
+                </div>
+              )}
+            </div>
+          )}
+        
         </>) : (<>
           {/* 双路 Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-wall-border">
