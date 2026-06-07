@@ -647,9 +647,13 @@ function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topo
       {/* 路径内延伸推演结果 */}
       {(drillOutput || drillThinking) && (
         <div className="border-t-2 border-purple-500/30 shrink-0 max-h-[300px] overflow-y-auto">
-          <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/[0.05]">
-            <span className="text-[10px] text-purple-400 font-mono">🔀 分支延伸</span>
-            {drillThinking && <Loader2 size={10} className="animate-spin text-purple-400" />}
+          <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/[0.05] justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-purple-400 font-mono">🔀 分支延伸</span>
+              {drillThinking && <Loader2 size={10} className="animate-spin text-purple-400" />}
+            </div>
+            <button onClick={() => { setDrillOutput(''); setDrillThinking(false); setDrillTopoReady(false) }}
+              className="text-wall-dim hover:text-red-400 transition-colors"><X size={12} /></button>
           </div>
           {drillOutput && <div className="p-3 markdown-body text-xs leading-relaxed"><ReactMarkdown remarkPlugins={[remarkGfm]}>{drillOutput}</ReactMarkdown></div>}
           {drillTopoReady && (
@@ -1160,9 +1164,13 @@ export default function Home() {
                   {/* 单路路径内延伸推演 */}
           {(drillOutput || drillThinking) && (
             <div className="border-t-2 border-purple-500/30 bg-purple-500/[0.02]">
-              <div className="flex items-center gap-2 px-6 py-2">
-                <span className="text-xs text-purple-400 font-mono">延伸推演</span>
-                {drillThinking && <Loader2 size={12} className="animate-spin text-purple-400" />}
+              <div className="flex items-center gap-2 px-6 py-2 justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-purple-400 font-mono">延伸推演</span>
+                  {drillThinking && <Loader2 size={12} className="animate-spin text-purple-400" />}
+                </div>
+                <button onClick={() => { setDrillOutput(''); setDrillThinking(false); setDrillTopoReady(false); drillAbortRef.current?.abort() }}
+                  className="text-wall-dim hover:text-red-400 transition-colors"><X size={14} /></button>
               </div>
               <div className="px-6 pb-4 max-h-[400px] overflow-y-auto markdown-body">
                 {drillOutput && <ReactMarkdown remarkPlugins={[remarkGfm]}>{drillOutput}</ReactMarkdown>}
