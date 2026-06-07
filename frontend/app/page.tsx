@@ -1200,7 +1200,6 @@ export default function Home() {
               stats={dual.statsA} topoNodes={dual.topoNodesA} topoEdges={dual.topoEdgesA}
               topoReady={dual.topoReadyA} error={dual.error} borderColor="#6366f1"
  />
-            <div className="w-px bg-wall-border/50" />
             <DualColumn label={dual.labels.b} output={dual.outputB} thinking={dual.running && !dual.outputB}
               stats={dual.statsB} topoNodes={dual.topoNodesB} topoEdges={dual.topoEdgesB}
               topoReady={dual.topoReadyB} error="" borderColor="#f59e0b"
