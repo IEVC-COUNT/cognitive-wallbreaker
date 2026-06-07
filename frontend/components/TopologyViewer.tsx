@@ -5,13 +5,19 @@ import ReactFlow, { Background, Controls, MiniMap, Node, Edge } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { X, Share2 } from 'lucide-react'
 import { layoutTopology, TYPE_STYLES } from '@/hooks/useWallbreaker'
-import { nodeTypes } from './GlowNode'
+import { nodeTypes, setNodeDrillHandler } from './GlowNode'
+import { useEffect } from 'react'
 
 export function TopologyViewer({ nodes, edges, ready, onDrillDown }: {
   nodes: Node[]; edges: Edge[]; ready: boolean
   onDrillDown?: (label: string, desc: string) => void
 }) {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
+
+  useEffect(() => {
+    setNodeDrillHandler(onDrillDown || null)
+    return () => setNodeDrillHandler(null)
+  }, [onDrillDown])
 
   if (!ready) return null
 

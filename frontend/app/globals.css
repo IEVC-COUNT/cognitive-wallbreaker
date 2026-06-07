@@ -31,7 +31,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 背景纹理 + 粒子 */
+/* 背景纹理 */
 body::before {
   content: '';
   position: fixed;
@@ -41,37 +41,9 @@ body::before {
   background:
     radial-gradient(ellipse 600px 400px at 20% 20%, rgba(129, 140, 248, 0.06) 0%, transparent 55%),
     radial-gradient(ellipse 500px 350px at 80% 60%, rgba(99, 102, 241, 0.04) 0%, transparent 55%),
-    radial-gradient(ellipse 400px 300px at 60% 30%, rgba(168, 85, 247, 0.03) 0%, transparent 50%),
     linear-gradient(rgba(30, 42, 58, 0.3) 1px, transparent 1px),
     linear-gradient(90deg, rgba(30, 42, 58, 0.3) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
-}
-
-/* ── 浮动粒子层 ── */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(1px 1px at 12% 18%, rgba(129, 140, 248, 0.5), transparent),
-    radial-gradient(1px 1px at 25% 45%, rgba(168, 85, 247, 0.4), transparent),
-    radial-gradient(1px 1px at 38% 72%, rgba(99, 102, 241, 0.5), transparent),
-    radial-gradient(2px 2px at 52% 15%, rgba(129, 140, 248, 0.3), transparent),
-    radial-gradient(1px 1px at 65% 55%, rgba(168, 85, 247, 0.4), transparent),
-    radial-gradient(1px 1px at 78% 35%, rgba(99, 102, 241, 0.5), transparent),
-    radial-gradient(2px 2px at 85% 75%, rgba(129, 140, 248, 0.3), transparent),
-    radial-gradient(1px 1px at 8% 85%, rgba(168, 85, 247, 0.4), transparent),
-    radial-gradient(1px 1px at 42% 92%, rgba(99, 102, 241, 0.5), transparent),
-    radial-gradient(2px 2px at 70% 8%, rgba(129, 140, 248, 0.3), transparent),
-    radial-gradient(1px 1px at 92% 48%, rgba(168, 85, 247, 0.4), transparent),
-    radial-gradient(1px 1px at 15% 30%, rgba(99, 102, 241, 0.3), transparent),
-    radial-gradient(2px 2px at 55% 50%, rgba(129, 140, 248, 0.25), transparent),
-    radial-gradient(1px 1px at 88% 18%, rgba(168, 85, 247, 0.35), transparent),
-    radial-gradient(1px 1px at 33% 80%, rgba(99, 102, 241, 0.4), transparent);
-  background-size: 200% 200%;
-  animation: particleFloat 20s ease-in-out infinite;
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
 }
 
 /* 滚动条 */
@@ -180,107 +152,6 @@ body::after {
   50% { opacity: 1; transform: translateY(-2px); }
 }
 
-/* ── 浮动粒子动画 ── */
-@keyframes particleFloat {
-  0%, 100% { background-position: 0% 0%; }
-  25% { background-position: 50% 30%; }
-  50% { background-position: 100% 10%; }
-  75% { background-position: 30% 60%; }
-}
-
-/* ── Agent 卡片发光边框 ── */
-@keyframes borderGlowPending {
-  0%, 100% { border-color: rgba(30, 42, 58, 0.5); box-shadow: 0 0 0px transparent; }
-  50% { border-color: rgba(100, 116, 139, 0.3); box-shadow: 0 0 4px rgba(100, 116, 139, 0.08); }
-}
-
-@keyframes borderGlowRunning {
-  0%, 100% {
-    border-color: rgba(250, 204, 21, 0.5);
-    box-shadow: 0 0 8px rgba(250, 204, 21, 0.2), inset 0 0 8px rgba(250, 204, 21, 0.03);
-  }
-  50% {
-    border-color: rgba(250, 204, 21, 0.9);
-    box-shadow: 0 0 20px rgba(250, 204, 21, 0.4), 0 0 40px rgba(250, 204, 21, 0.1), inset 0 0 16px rgba(250, 204, 21, 0.05);
-  }
-}
-
-@keyframes borderGlowDone {
-  0%, 100% {
-    border-color: rgba(34, 197, 94, 0.5);
-    box-shadow: 0 0 10px rgba(34, 197, 94, 0.25), inset 0 0 10px rgba(34, 197, 94, 0.02);
-  }
-  50% {
-    border-color: rgba(34, 197, 94, 0.9);
-    box-shadow: 0 0 24px rgba(34, 197, 94, 0.5), 0 0 48px rgba(34, 197, 94, 0.12), inset 0 0 18px rgba(34, 197, 94, 0.04);
-  }
-}
-
-@keyframes borderGlowError {
-  0%, 100% {
-    border-color: rgba(239, 68, 68, 0.5);
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
-  }
-  50% {
-    border-color: rgba(239, 68, 68, 0.9);
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4), 0 0 40px rgba(239, 68, 68, 0.1);
-  }
-}
-
-/* ── 彩虹边框（法官裁决完成）── */
-@keyframes borderRainbow {
-  0%   { border-color: rgba(99, 102, 241, 0.8); box-shadow: 0 0 16px rgba(99, 102, 241, 0.35); }
-  25%  { border-color: rgba(168, 85, 247, 0.8); box-shadow: 0 0 16px rgba(168, 85, 247, 0.35); }
-  50%  { border-color: rgba(236, 72, 153, 0.8); box-shadow: 0 0 16px rgba(236, 72, 153, 0.35); }
-  75%  { border-color: rgba(34, 197, 94, 0.8); box-shadow: 0 0 16px rgba(34, 197, 94, 0.35); }
-  100% { border-color: rgba(99, 102, 241, 0.8); box-shadow: 0 0 16px rgba(99, 102, 241, 0.35); }
-}
-
-/* ── 魔鬼代言人震荡 ── */
-@keyframes devilShake {
-  0%, 100% { transform: translateX(0); }
-  10% { transform: translateX(-2px); }
-  30% { transform: translateX(2px); }
-  50% { transform: translateX(-1px); }
-  70% { transform: translateX(1px); }
-  90% { transform: translateX(-0.5px); }
-}
-
-/* ── 拓扑节点发光呼吸 ── */
-@keyframes nodeGlowCore {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.3)); }
-  50% { filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.6)) drop-shadow(0 0 40px rgba(99, 102, 241, 0.15)); }
-}
-
-@keyframes nodeGlowRisk {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.3)); }
-  50% { filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.6)) drop-shadow(0 0 40px rgba(239, 68, 68, 0.15)); }
-}
-
-/* ── 扫描线 ── */
-@keyframes scanLine {
-  0% { top: 0%; }
-  100% { top: 100%; }
-}
-
-/* ── 能量连接线 ── */
-@keyframes dashFlow {
-  to { stroke-dashoffset: -24; }
-}
-
-/* ── 文字淡入 ── */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ── 裁决宣告 ── */
-@keyframes judgeReveal {
-  0% { opacity: 0; transform: scale(0.95); filter: blur(8px); }
-  50% { opacity: 0.8; transform: scale(1.01); filter: blur(0px); }
-  100% { opacity: 1; transform: scale(1); filter: blur(0px); }
-}
-
 .animate-breathe {
   animation: breathe 4s ease-in-out infinite;
 }
@@ -291,95 +162,4 @@ body::after {
 
 .animate-scan {
   animation: scan 2s ease-in-out infinite;
-}
-
-.animate-border-pending {
-  animation: borderGlowPending 3s ease-in-out infinite;
-}
-
-.animate-border-running {
-  animation: borderGlowRunning 1s ease-in-out infinite;
-}
-
-.animate-border-done {
-  animation: borderGlowDone 2s ease-in-out infinite;
-}
-
-.animate-border-error {
-  animation: borderGlowError 1.5s ease-in-out infinite;
-}
-
-.animate-border-rainbow {
-  animation: borderRainbow 3s linear infinite;
-}
-
-.animate-devil-shake {
-  animation: devilShake 0.4s ease-in-out 3;
-}
-
-.animate-node-glow-core {
-  animation: nodeGlowCore 3s ease-in-out infinite;
-}
-
-.animate-node-glow-risk {
-  animation: nodeGlowRisk 2.5s ease-in-out infinite;
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.5s ease-out forwards;
-}
-
-.animate-judge-reveal {
-  animation: judgeReveal 0.8s ease-out forwards;
-}
-
-/* ── 能量连接线样式 ── */
-.energy-edge {
-  stroke-dasharray: 8 4;
-  animation: dashFlow 0.8s linear infinite;
-}
-
-/* ── 扫描线效果 ── */
-.scan-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 1;
-}
-.scan-overlay::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.15), transparent);
-  animation: scanLine 3s linear infinite;
-}
-
-/* ══════════════════════════════════════════════════════════════
-   PDF 导出打印样式
-   ══════════════════════════════════════════════════════════════ */
-@media print {
-  nav, .no-print, button, textarea, input, .border-wall-border {
-    display: none !important;
-  }
-  body {
-    background: white !important;
-    color: black !important;
-    font-size: 12pt;
-  }
-  .markdown-body {
-    color: #1a1a1a !important;
-    background: white !important;
-  }
-  .markdown-body h1, .markdown-body h2, .markdown-body h3 {
-    color: #1a1a1a !important;
-  }
-  .markdown-body p, .markdown-body li {
-    color: #333 !important;
-  }
-  .text-wall-text { color: #1a1a1a !important; }
-  .text-wall-muted { color: #555 !important; }
-  .text-wall-dim { color: #777 !important; }
 }

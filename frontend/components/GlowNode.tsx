@@ -1,26 +1,20 @@
 'use client'
 
-import { useCallback } from 'react'
 import { Position, Handle } from 'reactflow'
 import { TYPE_STYLES, NODE_WIDTH } from '@/hooks/useWallbreaker'
+
+// 全局回调，由 TopologyViewer 设置
+let _onDrillDown: ((label: string, desc: string) => void) | null = null
+export function setNodeDrillHandler(fn: ((label: string, desc: string) => void) | null) {
+  _onDrillDown = fn
+}
 
 export function GlowNode({ data, selected }: { data: any; selected: boolean }) {
   const style = TYPE_STYLES[data.nodeType] || TYPE_STYLES.core
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    // 通过自定义事件通知父组件
-    const event = new CustomEvent('node-drilldown', {
-      bubbles: true,
-      detail: { label: data.label, description: data.description }
-    })
-    e.currentTarget.dispatchEvent(event)
-  }, [data.label, data.description])
-
   return (
     <div
       className="relative px-4 py-3 rounded-2xl cursor-pointer transition-all duration-300"
-      onDoubleClick={handleClick}
       style={{
         background: `radial-gradient(ellipse at center, ${style.bg} 0%, rgba(15,22,36,0.9) 100%)`,
         border: `1.5px solid ${selected ? style.glow : style.border}`,
@@ -33,7 +27,12 @@ export function GlowNode({ data, selected }: { data: any; selected: boolean }) {
       <Handle type="target" position={Position.Top} style={{ background: style.border }} isConnectable={false} />
       <div className="text-xs font-semibold truncate" style={{ color: style.border }}>{data.label}</div>
       <div className="text-[10px] text-wall-muted mt-1 truncate">{data.description}</div>
-      <div className="text-[8px] text-wall-dim mt-1 opacity-50">双击延伸推演</div>
+      <div
+        className="text-[9px] mt-1.5 px-2 py-0.5 rounded border border-white/10 text-white/40 hover:bg-white/10 hover:text-white/70 transition-colors text-center cursor-pointer"
+        onClick={(e) => { e.stopPropagation(); _onDrillDown?.(data.label, data.description) }}
+      >
+        🔀 延伸推演
+      </div>
       <Handle type="source" position={Position.Bottom} style={{ background: style.border }} isConnectable={false} />
     </div>
   )
