@@ -1089,12 +1089,12 @@ export default function Home() {
             <DualColumn label={dual.labels.a} output={dual.outputA} thinking={dual.running && !dual.outputA}
               stats={dual.statsA} topoNodes={dual.topoNodesA} topoEdges={dual.topoEdgesA}
               topoReady={dual.topoReadyA} error={dual.error} borderColor="#6366f1"
-              onDrillDown={(node) => { setMode('single'); setInput(`深入分析：${(node.data as any)?.label} — ${(node.data as any)?.description}`) }} />
+              onDrillDown={(node) => { setMode('single'); drillDown(node) }} />
             <div className="w-px bg-wall-border/50" />
             <DualColumn label={dual.labels.b} output={dual.outputB} thinking={dual.running && !dual.outputB}
               stats={dual.statsB} topoNodes={dual.topoNodesB} topoEdges={dual.topoEdgesB}
               topoReady={dual.topoReadyB} error="" borderColor="#f59e0b"
-              onDrillDown={(node) => { setMode('single'); setInput(`深入分析：${(node.data as any)?.label} — ${(node.data as any)?.description}`) }} />
+              onDrillDown={(node) => { setMode('single'); drillDown(node) }} />
           </div>
         </>)}
         </div>
