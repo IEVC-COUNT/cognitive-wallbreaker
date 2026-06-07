@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { Node, Edge, useNodesState, useEdgesState, MarkerType } from 'reactflow'
+import { Node, Edge, Position, useNodesState, useEdgesState, MarkerType } from 'reactflow'
 import dagre from 'dagre'
 
 /* ══════════════════════════════════════════════════════════════
@@ -22,8 +22,8 @@ export function layoutTopology(nodes: Node[], edges: Edge[]): { nodes: Node[]; e
     return {
       ...node,
       position: { x: pos.x - NODE_WIDTH / 2, y: pos.y - NODE_HEIGHT / 2 },
-      sourcePosition: 'bottom' as const,
-      targetPosition: 'top' as const,
+      sourcePosition: Position.Bottom,
+      targetPosition: Position.Top,
     }
   })
   return { nodes: layoutedNodes, edges }
@@ -104,7 +104,7 @@ export function useWallbreaker() {
     setV5Phase('')
   }, [])
 
-  const simulate = useCallback(async (event: string, images: File[], endpoint: string = '/api/simulate', onEventId?: (id: string) => void) => {
+  const simulate = useCallback(async (event: string, images: File[], endpoint: string = '/api/simulate', onEventId?: (id: string) => void, anonymousId?: string) => {
     if (!event.trim() && images.length === 0) return
     reset()
 
@@ -124,6 +124,7 @@ export function useWallbreaker() {
       const formData = new FormData()
       formData.append('event', event.trim())
       formData.append('user_id', 'default')
+      if (anonymousId) formData.append('anonymous_id', anonymousId)
       images.forEach((file) => formData.append('images', file))
 
       const resp = await fetch(endpoint, { method: 'POST', body: formData, signal: controller.signal })

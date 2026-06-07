@@ -28,11 +28,31 @@ def init_db():
             stats_json TEXT,
             created_at TEXT NOT NULL,
             ip_hash TEXT NOT NULL,
+            anonymous_id TEXT NOT NULL DEFAULT '',
             view_count INTEGER NOT NULL DEFAULT 0,
             like_count INTEGER NOT NULL DEFAULT 0
         );
+
+        CREATE TABLE IF NOT EXISTS event_outcomes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_id TEXT NOT NULL,
+            outcome_text TEXT NOT NULL DEFAULT '',
+            accuracy_score INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (event_id) REFERENCES public_events(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS anonymous_memory (
+            anonymous_id TEXT PRIMARY KEY,
+            memory_json TEXT NOT NULL DEFAULT '{}',
+            event_count INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
         CREATE INDEX IF NOT EXISTS idx_events_created ON public_events(created_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_events_ip ON public_events(ip_hash);
+        CREATE INDEX IF NOT EXISTS idx_events_anon ON public_events(anonymous_id);
+        CREATE INDEX IF NOT EXISTS idx_outcomes_event ON event_outcomes(event_id);
     """)
     conn.commit()
     conn.close()

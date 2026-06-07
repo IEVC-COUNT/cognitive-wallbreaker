@@ -15,11 +15,20 @@ export default function SubmitPage() {
     setTopoNodes, setTopoEdges, setOutput, setTopoReady, simulate, reset, eventId, v5Agents } = useWallbreaker()
   const router = useRouter()
 
+  // 匿名用户标识：localStorage 持久化，跨会话保持
+  const getAnonymousId = () => {
+    let id = localStorage.getItem('wallbreaker_uid')
+    if (!id) { id = 'anon_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem('wallbreaker_uid', id) }
+    return id
+  }
+
   const handleSubmit = useCallback(async () => {
     if (!input.trim()) return
+    // 将 anonymous_id 注入 FormData 提交
+    const anonId = getAnonymousId()
     await simulate(input.trim(), images, '/api/public/submit', (id) => {
       setTimeout(() => router.push(`/event/${id}`), 500)
-    })
+    }, anonId)
   }, [input, images, simulate, router])
 
   return (
