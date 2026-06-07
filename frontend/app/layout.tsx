@@ -4,8 +4,8 @@ import { Brain } from 'lucide-react'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: '认知破壁机 · 公共决策推演平台',
-  description: 'AI多智能体对抗推演 — 提交个人决策，七Agent公开推演',
+  title: '认知破壁机 V6.0 · 公共个人决策推演平台',
+  description: 'AI多智能体对抗推演 — 提交你的个人决策，七Agent公开推演，所有人可浏览学习',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,6 +1,6 @@
 """
-认知破壁机 V5.0 — FastAPI 后端
-多智能体对抗推演 + 多模态输入 + SSE 流式输出 + 拓扑沙盘
+认知破壁机 V6.0 — FastAPI 后端
+公共个人决策推演平台 + 多智能体对抗 + SSE流式 + 拓扑沙盘
 """
 import json
 import asyncio
@@ -183,7 +183,7 @@ engine_config = EngineConfig(
     base_url=BASE_URL,
 )
 
-# ── V5.0 多智能体引擎配置 ──
+# ── V5 多智能体引擎配置（V6.0 保留兼容）──
 v5_engine_config = V5EngineConfig(
     model=MODEL,
     api_key=API_KEY,
@@ -467,8 +467,8 @@ async def health():
     """健康检查接口"""
     return {
         "status": "ok",
-        "service": "Cognitive Wallbreaker v5.0",
-        "version": "5.0.0",
+        "service": "Cognitive Wallbreaker v6.0",
+        "version": "6.0.0",
         "model": MODEL,
         "base_url": BASE_URL,
         "endpoints": {

@@ -30,7 +30,7 @@ export default function SubmitPage() {
           <div className="w-full max-w-xl space-y-6">
             <div className="text-center space-y-2 mb-2">
               <h1 className="text-2xl font-bold"><span className="text-[#818cf8]">提交决策</span></h1>
-              <p className="text-wall-muted text-xs font-mono">你的个人决策，七Agent公开推演</p>
+              <p className="text-wall-muted text-xs font-mono">提交个人决策，七Agent公开推演，所有人可浏览</p>
             </div>
             <div className="relative">
               <div className="absolute -inset-1 bg-[#818cf8]/5 rounded-2xl blur-xl" />

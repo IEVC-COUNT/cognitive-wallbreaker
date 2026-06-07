@@ -1,5 +1,5 @@
 """
-认知破壁机 V5.0 — Telegram Bot
+认知破壁机 V6.0 — Telegram Bot
 支持 /simulate 推演、/v5 多Agent、/dual 双路对比
 使用原生 Telegram Bot API (httpx)，无需额外依赖
 """
@@ -123,7 +123,7 @@ async def tg_get_updates(offset: Optional[int] = None, timeout: int = 30) -> lis
 # 命令处理
 # ═══════════════════════════════════════════
 
-WELCOME_TEXT = """🧠 *认知破壁机 V5.0*
+WELCOME_TEXT = """🧠 *认知破壁机 V6.0*
 
 击碎隐性假设，穿透认知盲区。
 
@@ -284,7 +284,7 @@ async def main():
         return
 
     log.info("=" * 50)
-    log.info("  认知破壁机 V5.0 · Telegram Bot")
+    log.info("  认知破壁机 V6.0 · Telegram Bot")
     log.info(f"  Model: {MODEL}")
     log.info(f"  API: {BASE_URL}")
     log.info("=" * 50)
