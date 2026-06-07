@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, ArrowLeft, Clock, Eye, Heart, Share2, Send, Star } from 'lucide-react'
+import { Loader2, ArrowLeft, Clock, Eye, Heart, Share2, Send, Star, FileDown } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { TopologyViewer } from '@/components/TopologyViewer'
@@ -25,6 +25,10 @@ export default function EventDetailPage() {
   const [accuracyScore, setAccuracyScore] = useState(3)
   const [submittingOutcome, setSubmittingOutcome] = useState(false)
   const [outcomeMsg, setOutcomeMsg] = useState('')
+
+  const handlePrint = () => {
+    window.print()
+  }
 
   const submitOutcome = async () => {
     if (!outcomeText.trim()) return
@@ -86,10 +90,15 @@ export default function EventDetailPage() {
       {/* Header */}
       <div className="border-b border-wall-border/50 bg-wall-surface/30">
         <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-4 mb-3">
+          <div className="flex items-center gap-4 mb-3 justify-between">
             <Link href="/" className="flex items-center gap-1 text-wall-muted hover:text-wall-text text-xs transition-colors">
               <ArrowLeft size={14} /> 决策广场
             </Link>
+            <button onClick={handlePrint}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-wall-border text-wall-muted hover:text-wall-text hover:border-[#818cf8]/30 transition-all text-xs no-print">
+              <FileDown size={14} />
+              <span className="hidden sm:inline">导出 PDF</span>
+            </button>
           </div>
           <h1 className="text-xl font-bold text-wall-text mb-2">{event.title}</h1>
           <div className="flex items-center gap-3 text-wall-dim text-xs flex-wrap">

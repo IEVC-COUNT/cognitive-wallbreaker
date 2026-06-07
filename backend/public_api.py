@@ -11,9 +11,12 @@ import hashlib
 import asyncio
 import re
 import os
+import time
 from typing import Optional, List
 from datetime import datetime, timezone
+from html import unescape
 
+import httpx
 from fastapi import APIRouter, Request, Form, UploadFile, File
 from fastapi.responses import StreamingResponse, JSONResponse
 from openai import AsyncOpenAI
@@ -30,8 +33,111 @@ MODEL = os.getenv("WALLBREAKER_MODEL", "deepseek-v4-flash")
 
 
 # ═══════════════════════════════════════════
-# 辅助函数
+# 搜索注入（推演前获取现实背景信息）
 # ═══════════════════════════════════════════
+
+async def search_web(query: str, max_results: int = 5) -> List[dict]:
+    """
+    搜索公开信息，为推演提供现实背景。
+    使用 DuckDuckGo Lite（无需API key），失败则返回空列表。
+    """
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                "https://lite.duckduckgo.com/lite/",
+                params={"q": query},
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+            )
+            if resp.status_code != 200:
+                return []
+
+            # 解析搜索结果
+            results = []
+            # 匹配结果链接和描述
+            link_pattern = re.findall(
+                r'<a[^>]*href="([^"]+)"[^>]*>([^<]+)</a>',
+                resp.text, re.DOTALL,
+            )
+            snippet_pattern = re.findall(
+                r'<td[^>]*class="result-snippet"[^>]*>(.*?)</td>',
+                resp.text, re.DOTALL,
+            )
+
+            seen = set()
+            for i, (url, title) in enumerate(link_pattern):
+                url = unescape(url.strip())
+                title = unescape(re.sub(r'<[^>]+>', '', title)).strip()
+                if not title or not url.startswith('http') or 'duckduckgo.com' in url:
+                    continue
+                if url in seen:
+                    continue
+                seen.add(url)
+                snippet = ''
+                if i < len(snippet_pattern):
+                    snippet = unescape(re.sub(r'<[^>]+>', '', snippet_pattern[i])).strip()
+                results.append({"title": title[:200], "url": url[:300], "snippet": snippet[:300]})
+                if len(results) >= max_results:
+                    break
+
+            return results
+    except Exception:
+        return []
+
+
+async def extract_search_keywords(query: str) -> List[str]:
+    """用 LLM 从用户决策中提取搜索关键词"""
+    try:
+        client = AsyncOpenAI(api_key=API_KEY, base_url=BASE_URL)
+        resp = await asyncio.wait_for(
+            client.chat.completions.create(
+                model=MODEL, temperature=0.1, max_tokens=100,
+                messages=[{
+                    "role": "user",
+                    "content": f"从以下决策中提取2-3个搜索关键词，每个不超过10字，用逗号分隔。只输出关键词：\n{query[:300]}"
+                }],
+            ), timeout=15,
+        )
+        keywords = [k.strip() for k in resp.choices[0].message.content.strip().split(',') if k.strip()]
+        return keywords[:3]
+    except Exception:
+        return [query[:20]]
+
+
+async def build_search_context(query: str) -> str:
+    """
+    搜索注入主函数：提取关键词 → 搜索 → 格式化背景信息
+    返回注入到 System Prompt 的背景文本，失败时返回空字符串
+    """
+    try:
+        # 1. 提取关键词
+        keywords = await extract_search_keywords(query)
+        if not keywords:
+            return ""
+
+        # 2. 并行搜索每个关键词
+        all_results = []
+        for kw in keywords:
+            results = await search_web(kw, max_results=3)
+            all_results.extend(results)
+            if len(all_results) >= 8:
+                break
+
+        if not all_results:
+            return ""
+
+        # 3. 去重并格式化
+        seen_urls = set()
+        context_parts = ["## 🌐 现实背景信息（网络搜索注入）\n"]
+        for r in all_results:
+            if r["url"] not in seen_urls:
+                seen_urls.add(r["url"])
+                context_parts.append(f"- **{r['title']}**\n  {r['snippet']}\n")
+
+        context = "\n".join(context_parts[:15])  # 限制长度
+        context += "\n> 以上为公开搜索信息，供推演参考。请结合这些现实数据进行分析。\n"
+        return context
+    except Exception:
+        return ""
 
 async def generate_title(query: str) -> str:
     """用 LLM 从 query 生成 15-20 字的中文标题"""
@@ -162,16 +268,24 @@ async def public_submit(
     # 生成标题（并行）
     title_task = asyncio.create_task(generate_title(event.strip()))
 
+    # 搜索注入：获取现实背景信息（并行，不阻塞等待）
+    search_task = asyncio.create_task(build_search_context(event.strip()))
+
     # 构建增强的输入（含记忆上下文）
     enhanced_text = event.strip()
     if memory_context:
         enhanced_text = f"{memory_context}\n\n---\n\n## 当前决策\n{event.strip()}\n\n请结合用户的历史决策模式进行分析。"
 
-    # 使用 V4 引擎
-    engine_config = EngineConfig(
-        model=MODEL, temperature=0.7, max_tokens=2560,
-        api_key=API_KEY, base_url=BASE_URL,
-    )
+    # 等待搜索完成（最多10秒）
+    try:
+        search_context = await asyncio.wait_for(search_task, timeout=10)
+    except asyncio.TimeoutError:
+        search_context = ""
+
+    if search_context:
+        enhanced_text = search_context + "\n\n---\n\n" + enhanced_text
+
+    # 引擎路由：V4 标准推演 / V5 多Agent辩论
     from memory_manager import MemoryManager
     synthetic_uid = f"pub_{event_id}"
     mem = MemoryManager(
@@ -179,27 +293,58 @@ async def public_submit(
         openai_api_key=API_KEY, openai_base_url=BASE_URL,
         storage_dir=os.path.join(os.path.dirname(__file__), "..", "data", "memory"),
     )
-    engine = CognitiveEngine(config=engine_config, memory_manager=mem)
-    user_input = SimulationInput(user_id=synthetic_uid, text=enhanced_text)
+
+    use_v5 = mode == 'v5'
+    if use_v5:
+        from engine_v5 import V5CognitiveEngine, V5SimulationInput, V5EngineConfig
+        v5_config = V5EngineConfig(model=MODEL, api_key=API_KEY, base_url=BASE_URL, agent_timeout=45)
+        engine_v5 = V5CognitiveEngine(config=v5_config, memory_manager=mem)
+        v5_input = V5SimulationInput(user_id=synthetic_uid, text=enhanced_text)
+    else:
+        engine_config = EngineConfig(model=MODEL, temperature=0.7, max_tokens=2560, api_key=API_KEY, base_url=BASE_URL)
+        engine = CognitiveEngine(config=engine_config, memory_manager=mem)
+        user_input = SimulationInput(user_id=synthetic_uid, text=enhanced_text)
 
     async def event_stream():
         full_text = ""
-        start_time = None
-        import time
+        agent_outputs = []  # 收集各Agent输出
         start_time = time.time()
 
-        try:
-            async for data in engine.simulate_stream(user_input):
+        if use_v5:
+            # V5 模式：直接透传 phase/agent_done/topology/done 事件
+            async for data in engine_v5.simulate_stream(v5_input):
                 if await request.is_disconnected():
                     break
                 if data.startswith("data: "):
                     try:
                         payload = json.loads(data[6:])
-                        if payload.get("type") == "content":
-                            full_text += payload.get("text", "")
+                        if payload.get("type") == "agent_done":
+                            agent_outputs.append({"agent": payload.get("agent"), "name": payload.get("name"), "text": payload.get("text", "")})
+                            full_text += f"\n\n## {payload.get('name', '')}\n{payload.get('text', '')}\n"
+                        elif payload.get("type") == "topology":
+                            yield data  # 先发拓扑
+                            continue
                     except json.JSONDecodeError:
                         pass
                 yield data
+        else:
+            # V4 模式：标准推演
+            try:
+                async for data in engine.simulate_stream(user_input):
+                    if await request.is_disconnected():
+                        break
+                    if data.startswith("data: "):
+                        try:
+                            payload = json.loads(data[6:])
+                            if payload.get("type") == "content":
+                                full_text += payload.get("text", "")
+                        except json.JSONDecodeError:
+                            pass
+                    yield data
+            except Exception as e:
+                yield f"data: {json.dumps({'type': 'error', 'text': f'引擎异常: {str(e)[:200]}'})}\n\n"
+
+        try:
 
             elapsed_ms = int((time.time() - start_time) * 1000)
 
