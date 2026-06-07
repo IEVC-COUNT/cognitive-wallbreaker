@@ -673,41 +673,57 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* ── V6.0 顶部导航 ── */}
-      <nav className="sticky top-0 z-50 backdrop-blur border-b border-wall-border/50 bg-wall-bg/80">
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-12">
-          <div className="flex items-center gap-2.5">
-            <button onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchHistory() }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-all ${
-                showHistory ? 'border-[#818cf8]/50 bg-[#818cf8]/10 text-[#818cf8]' : 'border-wall-border text-wall-muted hover:text-wall-text hover:border-[#818cf8]/30'
-              }`}>
-              <History size={13} />
-              <span>历史</span>
-              {historyRecords.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-[#818cf8]/20 text-[#818cf8] text-[10px] font-mono">{historyRecords.length}</span>}
-            </button>
-            <div className="flex items-center gap-0.5 border border-wall-border rounded-lg p-0.5">
-              <button onClick={() => { setMode('single'); reset() }}
-                className={`px-2.5 py-1 rounded-md text-xs transition-all ${mode === 'single' ? 'bg-[#818cf8]/20 text-[#818cf8]' : 'text-wall-muted hover:text-wall-text'}`}>单路</button>
-              <button onClick={() => { setMode('dual'); reset(); resetDual() }}
-                className={`px-2.5 py-1 rounded-md text-xs transition-all ${mode === 'dual' ? 'bg-[#818cf8]/20 text-[#818cf8]' : 'text-wall-muted hover:text-wall-text'}`}>双路</button>
-            </div>
-            <button onClick={() => { setV5Mode(!v5Mode); reset() }}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all ${
-                v5Mode ? 'border-purple-500/50 bg-purple-500/10 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.15)]' : 'border-wall-border text-wall-muted hover:text-wall-text hover:border-[#818cf8]/30'
-              }`}>
-              <span className="text-xs">{v5Mode ? '😈' : '🔪'}</span>
-              <span>{v5Mode ? '七Agent辩论' : '五刀推演'}</span>
-            </button>
-            <h1 className="text-sm font-semibold tracking-wide">
-              <span className="text-[#818cf8]">认知破壁机</span>
-              <span className="ml-1.5 text-[10px] font-normal text-wall-dim">V6.0</span>
-            </h1>
+      {/* ── 顶部栏 ── */}
+      <div className="flex items-center justify-between px-6 py-3 border-b border-wall-border/50 bg-wall-surface/50">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchHistory() }}
+            title={showHistory ? '关闭历史记录' : '查看历史记录'} aria-label={showHistory ? '关闭历史记录' : '查看历史记录'}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs transition-all ${
+              showHistory
+                ? 'border-wall-accent/50 bg-wall-accent/10 text-wall-accent'
+                : 'border-wall-border text-wall-muted hover:text-wall-text hover:border-wall-accent/30'
+            }`}
+          >
+            <History size={14} />
+            <span>历史记录</span>
+            {historyRecords.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-wall-accent/20 text-wall-accent text-[10px] font-mono">
+                {historyRecords.length}
+              </span>
+            )}
+          </button>
+          <div className="flex items-center gap-0.5 border border-wall-border rounded-lg p-0.5">
+            <button onClick={() => { setMode('single'); reset() }} title="单路推演模式" aria-label="单路推演模式"
+              className={`px-2.5 py-1 rounded-md text-xs transition-all ${mode === 'single' ? 'bg-wall-accent/20 text-wall-accent' : 'text-wall-muted hover:text-wall-text'}`}>单路</button>
+            <button onClick={() => { setMode('dual'); reset(); resetDual() }} title="双路对比推演模式" aria-label="双路对比推演模式"
+              className={`px-2.5 py-1 rounded-md text-xs transition-all ${mode === 'dual' ? 'bg-wall-accent/20 text-wall-accent' : 'text-wall-muted hover:text-wall-text'}`}>双路</button>
           </div>
-          <p className="text-wall-dim text-[10px] hidden sm:block">
-            {mode === 'dual' ? '双路对比' : v5Mode ? '七Agent对抗·魔鬼代言人' : 'AI决策推演·拓扑沙盘'}
-          </p>
+          {/* V5.0 切换 */}
+          <button
+            onClick={() => { setV5Mode(!v5Mode); reset() }}
+            title={v5Mode ? '切换回 V4.0 单引擎模式' : '切换到 V5.0 多智能体对抗模式'} aria-label={v5Mode ? '切换回 V4.0 单引擎模式' : '切换到 V5.0 多智能体对抗模式'}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-all ${
+              v5Mode
+                ? 'border-purple-500/50 bg-purple-500/10 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.15)]'
+                : 'border-wall-border text-wall-muted hover:text-wall-text hover:border-wall-accent/30'
+            }`}
+            title={v5Mode ? 'V5.0 多智能体对抗模式' : '切换到 V5.0 多智能体模式'}
+          >
+            <span className="text-xs">{v5Mode ? '😈' : '🧠'}</span>
+            <span>{v5Mode ? 'V5.0 多Agent' : 'V4.0'}</span>
+          </button>
+          <h1 className="text-sm font-semibold tracking-wide">
+            <span className="text-wall-accent">认知破壁机</span>
+            <span className={`ml-2 text-xs font-normal ${v5Mode ? 'text-purple-400' : 'text-wall-muted'}`}>
+              {v5Mode ? 'V5.0 多Agent' : 'V4.0'}
+            </span>
+          </h1>
         </div>
-      </nav>
+        <p className="text-wall-dim text-[10px] hidden sm:block">
+          {mode === 'dual' ? '双路对比推演' : v5Mode ? 'V5.0 多智能体对抗 · 魔鬼代言人挑刺' : '现实主义博弈引擎 · 拓扑沙盘推演'}
+        </p>
+      </div>
 
       {/* ── 主内容：历史面板 + 左右两栏 ── */}
       <div className="flex flex-1 min-h-0 relative">
@@ -785,27 +801,29 @@ export default function Home() {
         {/* 左栏：输入 */}
         <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative border-r border-wall-border/50">
           <div className="w-full max-w-xl space-y-6">
-            {/* 标题 V6.0 */}
+            {/* 标题 */}
             <div className="text-center space-y-2">
               <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
-                <span className="bg-gradient-to-r from-[#818cf8] to-[#a78bfa] bg-clip-text text-transparent">认知破壁机</span>
+                <span className="text-wall-accent">认知破壁机</span>
               </h1>
-              <p className="text-wall-muted text-xs font-medium tracking-widest uppercase">Cognitive Wallbreaker</p>
+              <p className="text-wall-muted text-sm font-medium tracking-widest uppercase">Cognitive Wallbreaker</p>
               <div className="flex items-center justify-center gap-2 mt-1">
                 <span className={`px-2 py-0.5 rounded-md border text-xs font-mono transition-all ${
-                  v5Mode ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' : 'bg-[#818cf8]/10 border-[#818cf8]/20 text-[#818cf8]'
-                }`}>{v5Mode ? '七Agent' : 'V6.0'}</span>
+                  v5Mode
+                    ? 'bg-purple-500/10 border-purple-500/20 text-purple-400'
+                    : 'bg-wall-accent/10 border-wall-accent/20 text-wall-accent'
+                }`}>{v5Mode ? 'V5.0' : 'V4.0'}</span>
                 <span className="text-wall-dim text-xs">
-                  {v5Mode ? '魔鬼代言人 · 终审判决' : '五刀解剖 · 拓扑沙盘'}
+                  {v5Mode ? '多智能体对抗引擎 · 七Agent辩论' : '现实主义博弈引擎 · 拓扑沙盘推演'}
                 </span>
               </div>
             </div>
             <div className="relative">
-              <div className="absolute -inset-1 bg-[#818cf8]/5 rounded-2xl blur-xl animate-breathe" />
+              <div className="absolute -inset-1 bg-wall-glow/10 rounded-2xl blur-xl animate-breathe" />
               <textarea value={input} onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }}
                 placeholder="告诉我你正在纠结的决策..." disabled={thinking}
-                className="relative w-full h-32 lg:h-36 bg-wall-surface border border-wall-border rounded-xl p-5 text-wall-text placeholder-wall-muted/40 resize-none focus:outline-none focus:border-[#818cf8]/50 focus:shadow-[0_0_20px_rgba(129,140,248,0.08)] transition-all disabled:opacity-50 font-sans text-sm leading-relaxed"
+                className="relative w-full h-36 lg:h-44 bg-wall-surface border border-wall-border rounded-xl p-5 text-wall-text placeholder-wall-muted/40 resize-none focus:outline-none focus:border-wall-accent/50 transition-colors disabled:opacity-50 font-sans text-sm leading-relaxed"
               />
             </div>
             <ImageUploader images={images} onAdd={(f) => setImages(p => [...p, ...f].slice(0,5))}
@@ -813,7 +831,7 @@ export default function Home() {
             <div className="flex gap-3 justify-center">
               <button onClick={handleSubmit}
                 disabled={(!input.trim() && images.length === 0) || thinking}
-                className="flex items-center gap-2 px-6 py-3 bg-[#818cf8] border border-[#818cf8] rounded-xl text-white hover:bg-[#6366f1] hover:shadow-[0_0_20px_rgba(129,140,248,0.3)] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-medium shadow-[0_0_12px_rgba(129,140,248,0.15)]">
+                className="flex items-center gap-2 px-6 py-3 bg-wall-accent/10 border border-wall-accent/30 rounded-xl text-wall-accent hover:bg-wall-accent/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-medium">
                 {thinking ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
                 {thinking ? '推演中...' : '开始推演'}
               </button>
