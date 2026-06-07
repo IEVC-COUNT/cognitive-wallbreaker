@@ -305,6 +305,9 @@ async def public_submit(
         engine = CognitiveEngine(config=engine_config, memory_manager=mem)
         user_input = SimulationInput(user_id=synthetic_uid, text=enhanced_text)
 
+    # 用可变容器包装，闭包内可直接修改
+    _memory_state = {"past_events": past_events, "anon_memory": anon_memory}
+
     async def event_stream():
         full_text = ""
         agent_outputs = []  # 收集各Agent输出
@@ -361,17 +364,16 @@ async def public_submit(
 
             # 更新匿名记忆
             if anonymous_id:
-                past_events.append({
+                _memory_state["past_events"].append({
                     "query": event.strip()[:200],
                     "summary": result_summary,
                     "mode": mode,
                     "time": datetime.now(timezone.utc).isoformat(),
                 })
-                if len(past_events) > 20:  # 最多保留20条
-                    past_events = past_events[-20:]
-                anon_memory["events"] = past_events
+                if len(_memory_state["past_events"]) > 20:
+                    del _memory_state["past_events"][0:-20]
                 try:
-                    save_anonymous_memory(anonymous_id, anon_memory)
+                    save_anonymous_memory(anonymous_id, _memory_state["anon_memory"])
                 except Exception:
                     pass
 
