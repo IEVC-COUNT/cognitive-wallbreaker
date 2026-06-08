@@ -318,8 +318,8 @@ function useWallbreaker() {
 
     // 初始化所有 Agent 为 pending
     const agentKeys = fastMode
-      ? ['psychology', 'interest', 'judge']
-      : ['psychology', 'interest', 'class', 'game', 'soul', 'devil', 'judge']
+      ? ['crisis', 'psychology', 'interest', 'judge']
+      : ['crisis', 'psychology', 'interest', 'class', 'game', 'soul', 'devil', 'judge']
     const initial: Record<string, any> = {}
     agentKeys.forEach(k => { initial[k] = { name: k, emoji: '⚙️', status: 'pending', text: '' } })
     setV5Agents(initial)
@@ -384,25 +384,30 @@ function useWallbreaker() {
                 }))
                 break
               case 'topology':
+                console.log('🔗 V5 topology event:', msg.data?.nodes?.length, 'nodes,', msg.data?.edges?.length, 'edges')
                 setV5Topology(msg.data)
                 if (msg.data?.nodes && msg.data?.edges) {
-                  const rawNodes = msg.data.nodes.map((n: any, i: number) => ({
-                    id: n.id, type: 'glowNode',
-                    data: { label: n.label, description: n.description || '', nodeType: n.type || 'core' },
-                    position: { x: i * 200, y: i * 100 },
-                  }))
-                  const rawEdges = msg.data.edges.map((e: any, i: number) => ({
-                    id: `${e.source}-${e.target}-${i}`,
-                    source: e.source, target: e.target,
-                    label: e.label || '',
-                    markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
-                    style: { stroke: '#334155', strokeWidth: 1.5 },
-                    labelStyle: { fill: '#64748b', fontSize: 10 },
-                  }))
-                  const { nodes, edges } = layoutTopology(rawNodes, rawEdges)
-                  setTopoNodes(nodes)
-                  setTopoEdges(edges)
-                  setTopoReady(true)
+                  try {
+                    const rawNodes = msg.data.nodes.map((n: any, i: number) => ({
+                      id: n.id, type: 'glowNode',
+                      data: { label: n.label, description: n.description || '', nodeType: n.type || 'core' },
+                      position: { x: i * 200, y: i * 100 },
+                    }))
+                    const rawEdges = msg.data.edges.map((e: any, i: number) => ({
+                      id: `${e.source}-${e.target}-${i}`,
+                      source: e.source, target: e.target,
+                      label: e.label || '',
+                      markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
+                      style: { stroke: '#334155', strokeWidth: 1.5 },
+                      labelStyle: { fill: '#64748b', fontSize: 10 },
+                    }))
+                    const { nodes, edges } = layoutTopology(rawNodes, rawEdges)
+                    console.log('🔗 layoutTopology done:', nodes.length, 'nodes,', edges.length, 'edges')
+                    setTopoNodes(nodes)
+                    setTopoEdges(edges)
+                    setTopoReady(true)
+                    console.log('🔗 topoReady set to TRUE')
+                  } catch (e2) { console.error('🔗 topology build error:', e2) }
                 }
                 break
               case 'done':
@@ -415,7 +420,7 @@ function useWallbreaker() {
                 setThinking(false)
                 break
             }
-          } catch { /* skip */ }
+          } catch (e) { console.error('V5 SSE parse error:', e) }
         }
       }
     } catch (e: unknown) {
@@ -642,7 +647,7 @@ function DualColumn({ label, output, thinking, stats, topoNodes, topoEdges, topo
           {/* 注意: 不能加 elementsSelectable={false}，否则 onNodeClick 失效！ */}
           <ReactFlow nodes={topoNodes} edges={topoEdges} nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.2 }}
             minZoom={0.2} maxZoom={1.2} nodesDraggable={false} nodesConnectable={false}
-            onNodeClick={(_, node) => setSelectedNode(node)}  {/* 节点点击弹出详情卡 */}
+            onNodeClick={(_, node) => setSelectedNode(node)}
             defaultEdgeOptions={{ type: 'smoothstep', animated: true, style: { stroke: '#334155', strokeWidth: 1 } }}
             proOptions={{ hideAttribution: true }}>
             <Background color="#1e2a3a" gap={16} />
@@ -1123,6 +1128,7 @@ export default function Home() {
             </div>
 
             {/* 拓扑沙盘 */}
+            {console.log('🔗 Render check: showTopo=', showTopo, 'topoReady=', topoReady, 'nodes=', topoNodes.length)}
             {showTopo && topoReady && (
               <div className="flex-1 relative min-h-[300px]">
                 <ReactFlow

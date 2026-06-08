@@ -164,6 +164,7 @@ class V5CognitiveEngine:
         V5.0 多智能体对抗推演 — SSE 流式输出
 
         阶段:
+          0. [串行] Agent 0: 危机预见官（前置扫描，发现隐藏危机）
           1. [并行] Agent 1-3: 心理刀 + 利益刀 + 阶层刀
           2. [串行] Agent 4 → 5: 博弈刀 → 灵魂刀
           3. [串行] Agent 6: 魔鬼代言人
@@ -190,48 +191,58 @@ class V5CognitiveEngine:
             })
 
             # ═══════════════════════════════════
-            # 阶段 1: 并行运行 Agent 1-3
+            # 阶段 0: 危机预见官 — 前置扫描
+            # ═══════════════════════════════════
+            yield self._sse_event("phase", {
+                "phase": "crisis",
+                "text": "🔭 危机预见官入场，扫描局面中的隐藏危机...",
+            })
+
+            crisis_prompt = get_agent_prompt(
+                "crisis",
+                memory_context=memory_context,
+            )
+
+            result_crisis = await self._run_single_agent(
+                "crisis",
+                crisis_prompt,
+                f"请扫描以下局面，发现用户可能忽略的危机维度：\n{user_text}",
+            )
+
+            if result_crisis.success:
+                yield self._sse_event("agent_done", {
+                    "agent": "crisis",
+                    "name": AGENT_CONFIG["crisis"]["name"],
+                    "emoji": AGENT_CONFIG["crisis"]["emoji"],
+                    "text": result_crisis.full_text,
+                    "elapsed_ms": int(result_crisis.elapsed_ms),
+                })
+                # 将危机扫描结果注入后续 Agent 的上下文
+                crisis_context = f"\n\n## ⚡ 危机预见官扫描结果（请在后续分析中关注以下危机方向）\n{result_crisis.full_text}"
+            else:
+                yield self._sse_event("agent_error", {
+                    "agent": "crisis",
+                    "name": AGENT_CONFIG["crisis"]["name"],
+                    "error": result_crisis.error,
+                })
+                crisis_context = ""
+
+            # ═══════════════════════════════════
+            # 阶段 1: 串行运行 Agent 1-3 (openai 1.x 并行流式不稳定)
             # ═══════════════════════════════════
             yield self._sse_event("phase", {
                 "phase": "blades_1_3",
-                "text": "⚔️ 三刀齐出：心理·利益·阶层 同时推演...",
+                "text": "⚔️ 三刀出鞘：心理·利益·阶层 依次推演...",
             })
-
-            # 启动并行任务
-            task_psychology = asyncio.create_task(
-                self._run_single_agent(
-                    "psychology",
-                    get_agent_prompt("psychology", memory_context=memory_context),
-                    f"请分析以下决策：\n{user_text}",
-                )
-            )
-            task_interest = asyncio.create_task(
-                self._run_single_agent(
-                    "interest",
-                    get_agent_prompt("interest", memory_context=memory_context),
-                    f"请分析以下决策：\n{user_text}",
-                )
-            )
-            task_class = asyncio.create_task(
-                self._run_single_agent(
-                    "class",
-                    get_agent_prompt("class", memory_context=memory_context),
-                    f"请分析以下决策：\n{user_text}",
-                )
-            )
-
-            # 逐个收割结果（哪个先完成先播报）
-            pending = {
-                task_psychology: "psychology",
-                task_interest: "interest",
-                task_class: "class",
-            }
 
             results_1_3: Dict[str, AgentResult] = {}
 
-            async for coro in asyncio.as_completed(pending.keys()):
-                agent_key = pending[coro]
-                result = await coro
+            for agent_key in ["psychology", "interest", "class"]:
+                result = await self._run_single_agent(
+                    agent_key,
+                    get_agent_prompt(agent_key, memory_context=memory_context),
+                    f"请分析以下决策：\n{user_text}{crisis_context}",
+                )
                 results_1_3[agent_key] = result
 
                 cfg = AGENT_CONFIG[agent_key]
@@ -269,7 +280,7 @@ class V5CognitiveEngine:
             result_game = await self._run_single_agent(
                 "game",
                 game_prompt,
-                f"基于前三刀的分析摘要，为以下决策制定博弈策略：\n{user_text}",
+                f"基于前三刀的分析摘要，为以下决策制定博弈策略：\n{user_text}{crisis_context}",
             )
 
             if result_game.success:
@@ -305,7 +316,7 @@ class V5CognitiveEngine:
             result_soul = await self._run_single_agent(
                 "soul",
                 soul_prompt,
-                f"基于前四刀的分析摘要，对以下决策提出灵魂拷问：\n{user_text}",
+                f"基于前四刀的分析摘要，对以下决策提出灵魂拷问：\n{user_text}{crisis_context}",
             )
 
             if result_soul.success:
@@ -414,9 +425,9 @@ class V5CognitiveEngine:
                 metadata={
                     "event_type": "wallbreaker_v5_analysis",
                     "importance": 7,
-                    "agents_count": 7,
+                    "agents_count": 8,
                     "agents_succeeded": sum([
-                        1 for r in list(results_1_3.values()) + [result_game, result_soul, result_devil, result_judge]
+                        1 for r in list(results_1_3.values()) + [result_game, result_soul, result_devil, result_judge, result_crisis]
                         if r.success
                     ]),
                     "elapsed_ms": total_elapsed,
@@ -427,6 +438,7 @@ class V5CognitiveEngine:
                 "version": "5.0",
                 "elapsed_ms": total_elapsed,
                 "agents": {
+                    "crisis": result_crisis.success,
                     "psychology": results_1_3.get("psychology", AgentResult("psychology", "", "")).success,
                     "interest": results_1_3.get("interest", AgentResult("interest", "", "")).success,
                     "class": results_1_3.get("class", AgentResult("class", "", "")).success,
@@ -491,21 +503,24 @@ class V5CognitiveEngine:
         """
         从终审法官的输出中提取拓扑沙盘 JSON
 
-        复用 V4.0 的解析逻辑（多模式正则匹配 + 验证 + 修复）
+        多模式正则匹配 + 验证 + 修复
         """
         if not text:
             return None
 
-        # 模式1: ```json ... ```
-        json_pattern = r'```json\s*\n(.*?)\n\s*```'
+        # 模式1: ```json ... ``` — 找三反引号包裹的内容
+        json_pattern = r'```(?:json)?\s*\n([\s\S]*?)\n```'
         matches = re.findall(json_pattern, text, re.DOTALL)
 
-        # 模式2: ``` ... ```
-        if not matches:
-            json_pattern = r'```\s*\n(\{[\s\S]*?\})\s*\n\s*```'
-            matches = re.findall(json_pattern, text, re.DOTALL)
+        # 如果模式1匹配到，从里面挑出包含 topology_version 的那个
+        if matches:
+            candidates = []
+            for m in matches:
+                if '"topology_version"' in m or '"nodes"' in m:
+                    candidates.append(m)
+            matches = candidates
 
-        # 模式3: 直接找 JSON 对象
+        # 模式2: 直接找 JSON 对象
         if not matches:
             json_pattern = r'\{[\s\S]*"topology_version"[\s\S]*"nodes"[\s\S]*"edges"[\s\S]*\}'
             matches = re.findall(json_pattern, text, re.DOTALL)
@@ -594,35 +609,42 @@ class V5FastEngine(V5CognitiveEngine):
             })
             memory_context = await self._build_memory_context(user_text)
 
+            # 危机预见扫描（快速模式也做）
+            yield self._sse_event("phase", {
+                "phase": "crisis",
+                "text": "🔭 危机预见官快速扫描...",
+            })
+
+            crisis_prompt = get_agent_prompt("crisis", memory_context=memory_context)
+            crisis_msg = f"请快速扫描以下局面，发现隐藏危机：\n{user_text}"
+
+            result_crisis = await self._run_single_agent("crisis", crisis_prompt, crisis_msg)
+            if result_crisis.success:
+                yield self._sse_event("agent_done", {
+                    "agent": "crisis",
+                    "name": AGENT_CONFIG["crisis"]["name"],
+                    "emoji": AGENT_CONFIG["crisis"]["emoji"],
+                    "text": result_crisis.full_text,
+                    "elapsed_ms": int(result_crisis.elapsed_ms),
+                })
+                crisis_context = f"\n\n## ⚡ 危机预见官扫描结果\n{result_crisis.full_text}"
+            else:
+                crisis_context = ""
+
             # 并行：心理 + 利益
             yield self._sse_event("phase", {
                 "phase": "blades_fast",
-                "text": "⚡ 快速双刀并行推演...",
+                "text": "⚡ 快速双刀串行推演...",
             })
 
-            task_psych = asyncio.create_task(
-                self._run_single_agent(
-                    "psychology",
-                    get_agent_prompt("psychology", memory_context=memory_context),
-                    f"请分析以下决策：\n{user_text}",
-                )
-            )
-            task_int = asyncio.create_task(
-                self._run_single_agent(
-                    "interest",
-                    get_agent_prompt("interest", memory_context=memory_context),
-                    f"请分析以下决策：\n{user_text}",
-                )
-            )
-
             results = {}
-            async for coro in asyncio.as_completed([task_psych, task_int]):
-                result = await coro
-                # 找出是哪个 agent
-                for key in ["psychology", "interest"]:
-                    if result.agent_key == key:
-                        results[key] = result
-                        break
+            for agent_key in ["psychology", "interest"]:
+                result = await self._run_single_agent(
+                    agent_key,
+                    get_agent_prompt(agent_key, memory_context=memory_context),
+                    f"请分析以下决策：\n{user_text}{crisis_context}",
+                )
+                results[agent_key] = result
 
                 if result.success:
                     yield self._sse_event("agent_done", {

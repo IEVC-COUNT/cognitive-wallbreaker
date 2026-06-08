@@ -12,7 +12,7 @@ interface AgentMessage {
   elapsed_ms?: number
 }
 
-const AGENT_ORDER = ['psychology', 'interest', 'class', 'game', 'soul', 'devil', 'judge']
+const AGENT_ORDER = ['crisis', 'psychology', 'interest', 'class', 'game', 'soul', 'devil', 'judge']
 
 export function ForumPanel({ agents, phase }: { agents: Record<string, AgentMessage>; phase: string }) {
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null)

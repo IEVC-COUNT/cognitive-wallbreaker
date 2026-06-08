@@ -63,14 +63,13 @@ def parse_topology_v2(text: str) -> Optional[dict]:
     if not text:
         return None
 
-    # 1. 提取 JSON 代码块（```json ... ```）
-    json_pattern = r'```json\s*\n(.*?)\n\s*```'
+    # 1. 提取 JSON 代码块（```json 或 ``` ... ```）
+    json_pattern = r'```(?:json)?\s*\n([\s\S]*?)\n```'
     matches = re.findall(json_pattern, text, re.DOTALL)
-
-    if not matches:
-        # 尝试匹配没有语言标记的代码块
-        json_pattern = r'```\s*\n(\{[\s\S]*?\})\s*\n\s*```'
-        matches = re.findall(json_pattern, text, re.DOTALL)
+    if matches:
+        # 挑出包含 topology 关键字的
+        candidates = [m for m in matches if '"topology_version"' in m or '"nodes"' in m]
+        matches = candidates
 
     if not matches:
         # 最后一次尝试：直接找 JSON 对象
@@ -321,7 +320,7 @@ async def simulate(
             yield f"data: {json.dumps({'type': 'error', 'text': '请至少提供文本描述或图片'})}\n\n"
         return StreamingResponse(
             error_stream(),
-            media_type="text/event-stream",
+            media_type="text/event-stream; charset=utf-8",
             headers={"Cache-Control": "no-cache"},
         )
 
@@ -401,7 +400,7 @@ async def simulate(
 
     return StreamingResponse(
         event_stream(),
-        media_type="text/event-stream",
+        media_type="text/event-stream; charset=utf-8",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
@@ -608,7 +607,7 @@ async def simulate_v5(
             yield f"data: {json.dumps({'type': 'error', 'text': '请至少提供文本描述或图片'})}\n\n"
         return StreamingResponse(
             error_stream(),
-            media_type="text/event-stream",
+            media_type="text/event-stream; charset=utf-8",
             headers={"Cache-Control": "no-cache"},
         )
 
@@ -685,7 +684,7 @@ async def simulate_v5(
 
     return StreamingResponse(
         event_stream(),
-        media_type="text/event-stream",
+        media_type="text/event-stream; charset=utf-8",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
@@ -719,7 +718,7 @@ async def simulate_v5_fast(
             yield f"data: {json.dumps({'type': 'error', 'text': '请至少提供文本描述或图片'})}\n\n"
         return StreamingResponse(
             error_stream(),
-            media_type="text/event-stream",
+            media_type="text/event-stream; charset=utf-8",
             headers={"Cache-Control": "no-cache"},
         )
 
@@ -790,7 +789,7 @@ async def simulate_v5_fast(
 
     return StreamingResponse(
         event_stream(),
-        media_type="text/event-stream",
+        media_type="text/event-stream; charset=utf-8",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
@@ -910,7 +909,7 @@ async def simulate_dual(
             yield f"data: {json.dumps({'type': 'error', 'text': '请至少提供文本描述或图片'})}\n\n"
         return StreamingResponse(
             error_stream(),
-            media_type="text/event-stream",
+            media_type="text/event-stream; charset=utf-8",
             headers={"Cache-Control": "no-cache"},
         )
 
@@ -1046,7 +1045,7 @@ async def simulate_dual(
 
     return StreamingResponse(
         event_stream(),
-        media_type="text/event-stream",
+        media_type="text/event-stream; charset=utf-8",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",

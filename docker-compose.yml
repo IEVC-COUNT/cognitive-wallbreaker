@@ -13,6 +13,10 @@ services:
     ports:
       - "8920:8920"
     environment:
+      - PYTHONIOENCODING=utf-8
+      - PYTHONUTF8=1
+      - LANG=C.UTF-8
+      - LC_ALL=C.UTF-8
       - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-39d2be9a198742978eb9cabc3cc5bf05}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.deepseek.com/v1}
       - WALLBREAKER_MODEL=${WALLBREAKER_MODEL:-deepseek-chat}
