@@ -27,8 +27,8 @@ from engine import CognitiveEngine, SimulationInput, EngineConfig
 router = APIRouter(prefix="/api/public")
 
 # 复用 main.py 的配置
-API_KEY = os.getenv("OPENAI_API_KEY", "sk-39d2be9a198742978eb9cabc3cc5bf05")
-BASE_URL = os.getenv("OPENAI_BASE_URL", "http://127.0.0.1:4000/v1")
+API_KEY = os.getenv("OPENAI_API_KEY", "")
+BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.deepseek.com/v1")
 MODEL = os.getenv("WALLBREAKER_MODEL", "deepseek-v4-flash")
 
 
@@ -156,35 +156,9 @@ async def generate_title(query: str) -> str:
 
 
 def parse_topology(text: str) -> Optional[dict]:
-    """从推演文本中提取拓扑 JSON"""
-    if not text:
-        return None
-    json_pattern = r'```json\s*\n(.*?)\n\s*```'
-    matches = re.findall(json_pattern, text, re.DOTALL)
-    if not matches:
-        json_pattern = r'```\s*\n(\{[\s\S]*?\})\s*\n\s*```'
-        matches = re.findall(json_pattern, text, re.DOTALL)
-    if not matches:
-        json_pattern = r'\{[\s\S]*"topology_version"[\s\S]*"nodes"[\s\S]*"edges"[\s\S]*\}'
-        matches = re.findall(json_pattern, text, re.DOTALL)
-    for match in matches:
-        cleaned = match.strip()
-        cleaned = re.sub(r',\s*}', '}', cleaned)
-        cleaned = re.sub(r',\s*]', ']', cleaned)
-        cleaned = re.sub(r'//[^\n]*', '', cleaned)
-        cleaned = re.sub(r'/\*[\s\S]*?\*/', '', cleaned)
-        try:
-            data = json.loads(cleaned)
-        except json.JSONDecodeError:
-            continue
-        if not isinstance(data, dict):
-            continue
-        if "nodes" not in data or "edges" not in data:
-            continue
-        if len(data["nodes"]) < 3:
-            continue
-        return data
-    return None
+    """从推演文本中提取拓扑 JSON（委托共享解析器）"""
+    from topology_parser import parse_topology as _parse
+    return _parse(text, min_nodes=3)
 
 
 def load_anonymous_memory(anonymous_id: str) -> dict:

@@ -40,104 +40,10 @@ from memory_manager import MemoryManager
 from history_manager import HistoryManager
 
 # ═══════════════════════════════════════════
-# 拓扑 JSON 解析器
+# 拓扑 JSON 解析器（共享模块）
 # ═══════════════════════════════════════════
 
-def parse_topology_v2(text: str) -> Optional[dict]:
-    """
-    从大模型输出中提取并验证拓扑沙盘 JSON 数据
-
-    V4.0 核心特性：大模型在文本推演后输出 topology JSON。
-    此函数负责：
-    1. 从文本中提取 ```json ... ``` 代码块
-    2. 验证 JSON 结构和必需字段
-    3. 如果 AI 输出格式错误（如多余的逗号、注释），尝试修复
-    4. 失败时返回 None，让前端优雅降级为纯文本模式
-
-    Args:
-        text: 大模型完整输出文本
-
-    Returns:
-        合法的 topology dict，或 None
-    """
-    if not text:
-        return None
-
-    # 1. 提取 JSON 代码块（```json 或 ``` ... ```）
-    json_pattern = r'```(?:json)?\s*\n([\s\S]*?)\n```'
-    matches = re.findall(json_pattern, text, re.DOTALL)
-    if matches:
-        # 挑出包含 topology 关键字的
-        candidates = [m for m in matches if '"topology_version"' in m or '"nodes"' in m]
-        matches = candidates
-
-    if not matches:
-        # 最后一次尝试：直接找 JSON 对象
-        json_pattern = r'\{[\s\S]*"topology_version"[\s\S]*"nodes"[\s\S]*"edges"[\s\S]*\}'
-        matches = re.findall(json_pattern, text, re.DOTALL)
-
-    for match in matches:
-        # 2. 尝试解析
-        cleaned = match.strip()
-
-        # 移除可能的尾部逗号（AI 常见错误）
-        cleaned = re.sub(r',\s*}', '}', cleaned)
-        cleaned = re.sub(r',\s*]', ']', cleaned)
-
-        # 移除 JSON 内部的 // 和 /* */ 注释（AI 违规行为）
-        cleaned = re.sub(r'//[^\n]*', '', cleaned)
-        cleaned = re.sub(r'/\*[\s\S]*?\*/', '', cleaned)
-
-        try:
-            data = json.loads(cleaned)
-        except json.JSONDecodeError:
-            continue
-
-        # 3. 验证结构
-        if not isinstance(data, dict):
-            continue
-
-        if "nodes" not in data or "edges" not in data:
-            continue
-
-        if not isinstance(data["nodes"], list) or not isinstance(data["edges"], list):
-            continue
-
-        # 4. 验证并修复节点
-        valid_types = {"core", "risk", "safe", "social", "psychology", "future"}
-        valid_nodes = []
-        for node in data["nodes"]:
-            if not isinstance(node, dict):
-                continue
-            if "id" not in node or "label" not in node:
-                continue
-            # 标准化 type 字段
-            if node.get("type") not in valid_types:
-                node["type"] = "core"
-            valid_nodes.append(node)
-
-        # 5. 验证 edges 引用合法性
-        node_ids = {n["id"] for n in valid_nodes}
-        valid_edges = []
-        for edge in data["edges"]:
-            if not isinstance(edge, dict):
-                continue
-            if "source" not in edge or "target" not in edge:
-                continue
-            # 只保留引用存在的 edges
-            if edge["source"] in node_ids and edge["target"] in node_ids:
-                valid_edges.append(edge)
-
-        if len(valid_nodes) < 3:
-            continue  # 节点太少，不值得渲染
-
-        return {
-            "topology_version": data.get("topology_version", "2.0"),
-            "nodes": valid_nodes,
-            "edges": valid_edges,
-        }
-
-    return None
+from topology_parser import parse_topology as parse_topology_v2
 
 
 # ═══════════════════════════════════════════
@@ -169,9 +75,12 @@ app.add_middleware(
 # ═══════════════════════════════════════════
 
 # 从环境变量读取配置
-API_KEY = os.getenv("OPENAI_API_KEY", "sk-39d2be9a198742978eb9cabc3cc5bf05")
-BASE_URL = os.getenv("OPENAI_BASE_URL", "http://127.0.0.1:4000/v1")
-MODEL = os.getenv("WALLBREAKER_MODEL", "deepseek-v4-flash")
+API_KEY = os.getenv("OPENAI_API_KEY", "")
+BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.deepseek.com/v1")
+MODEL = os.getenv("WALLBREAKER_MODEL", "deepseek-chat")
+
+if not API_KEY:
+    raise RuntimeError("OPENAI_API_KEY 环境变量未设置，无法启动")
 
 # ── V4.0 引擎配置（保留兼容）──
 engine_config = EngineConfig(

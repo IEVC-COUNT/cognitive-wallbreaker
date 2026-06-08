@@ -1,4 +1,4 @@
-# 认知破壁机 V5.0 — 前端 Docker
+# 认知破壁机 V5.1 — 前端 Docker (生产模式)
 # Next.js 14 + React 18
 FROM node:20-alpine
 
@@ -8,10 +8,11 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# ── 源码 ──
+# ── 源码 + 构建 ──
 COPY . .
+RUN npm run build
 
 EXPOSE 3000
 
-# 开发模式启动
-CMD ["npm", "run", "dev"]
+# 生产模式启动
+CMD ["npm", "start"]

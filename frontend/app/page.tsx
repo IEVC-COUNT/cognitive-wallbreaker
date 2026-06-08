@@ -384,30 +384,25 @@ function useWallbreaker() {
                 }))
                 break
               case 'topology':
-                console.log('🔗 V5 topology event:', msg.data?.nodes?.length, 'nodes,', msg.data?.edges?.length, 'edges')
                 setV5Topology(msg.data)
                 if (msg.data?.nodes && msg.data?.edges) {
-                  try {
-                    const rawNodes = msg.data.nodes.map((n: any, i: number) => ({
-                      id: n.id, type: 'glowNode',
-                      data: { label: n.label, description: n.description || '', nodeType: n.type || 'core' },
-                      position: { x: i * 200, y: i * 100 },
-                    }))
-                    const rawEdges = msg.data.edges.map((e: any, i: number) => ({
-                      id: `${e.source}-${e.target}-${i}`,
-                      source: e.source, target: e.target,
-                      label: e.label || '',
-                      markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
-                      style: { stroke: '#334155', strokeWidth: 1.5 },
-                      labelStyle: { fill: '#64748b', fontSize: 10 },
-                    }))
-                    const { nodes, edges } = layoutTopology(rawNodes, rawEdges)
-                    console.log('🔗 layoutTopology done:', nodes.length, 'nodes,', edges.length, 'edges')
-                    setTopoNodes(nodes)
-                    setTopoEdges(edges)
-                    setTopoReady(true)
-                    console.log('🔗 topoReady set to TRUE')
-                  } catch (e2) { console.error('🔗 topology build error:', e2) }
+                  const rawNodes = msg.data.nodes.map((n: any, i: number) => ({
+                    id: n.id, type: 'glowNode',
+                    data: { label: n.label, description: n.description || '', nodeType: n.type || 'core' },
+                    position: { x: i * 200, y: i * 100 },
+                  }))
+                  const rawEdges = msg.data.edges.map((e: any, i: number) => ({
+                    id: `${e.source}-${e.target}-${i}`,
+                    source: e.source, target: e.target,
+                    label: e.label || '',
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
+                    style: { stroke: '#334155', strokeWidth: 1.5 },
+                    labelStyle: { fill: '#64748b', fontSize: 10 },
+                  }))
+                  const { nodes, edges } = layoutTopology(rawNodes, rawEdges)
+                  setTopoNodes(nodes)
+                  setTopoEdges(edges)
+                  setTopoReady(true)
                 }
                 break
               case 'done':
@@ -420,7 +415,7 @@ function useWallbreaker() {
                 setThinking(false)
                 break
             }
-          } catch (e) { console.error('V5 SSE parse error:', e) }
+          } catch { /* skip parse errors */ }
         }
       }
     } catch (e: unknown) {
@@ -1128,7 +1123,6 @@ export default function Home() {
             </div>
 
             {/* 拓扑沙盘 */}
-            {console.log('🔗 Render check: showTopo=', showTopo, 'topoReady=', topoReady, 'nodes=', topoNodes.length)}
             {showTopo && topoReady && (
               <div className="flex-1 relative min-h-[300px]">
                 <ReactFlow

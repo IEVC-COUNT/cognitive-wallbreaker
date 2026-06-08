@@ -500,87 +500,9 @@ class V5CognitiveEngine:
         return "\n\n---\n\n".join(parts)
 
     def _parse_topology(self, text: str) -> Optional[Dict[str, Any]]:
-        """
-        从终审法官的输出中提取拓扑沙盘 JSON
-
-        多模式正则匹配 + 验证 + 修复
-        """
-        if not text:
-            return None
-
-        # 模式1: ```json ... ``` — 找三反引号包裹的内容
-        json_pattern = r'```(?:json)?\s*\n([\s\S]*?)\n```'
-        matches = re.findall(json_pattern, text, re.DOTALL)
-
-        # 如果模式1匹配到，从里面挑出包含 topology_version 的那个
-        if matches:
-            candidates = []
-            for m in matches:
-                if '"topology_version"' in m or '"nodes"' in m:
-                    candidates.append(m)
-            matches = candidates
-
-        # 模式2: 直接找 JSON 对象
-        if not matches:
-            json_pattern = r'\{[\s\S]*"topology_version"[\s\S]*"nodes"[\s\S]*"edges"[\s\S]*\}'
-            matches = re.findall(json_pattern, text, re.DOTALL)
-
-        for match in matches:
-            cleaned = match.strip()
-
-            # 修复常见 AI 输出错误
-            cleaned = re.sub(r',\s*}', '}', cleaned)
-            cleaned = re.sub(r',\s*]', ']', cleaned)
-            cleaned = re.sub(r'//[^\n]*', '', cleaned)
-            cleaned = re.sub(r'/\*[\s\S]*?\*/', '', cleaned)
-
-            try:
-                data = json.loads(cleaned)
-            except json.JSONDecodeError:
-                continue
-
-            if not isinstance(data, dict):
-                continue
-            if "nodes" not in data or "edges" not in data:
-                continue
-
-            # 验证并修复节点
-            valid_types = {"core", "risk", "safe", "social", "psychology", "future"}
-            valid_nodes = []
-            for node in data["nodes"]:
-                if not isinstance(node, dict):
-                    continue
-                if "id" not in node or "label" not in node:
-                    continue
-                if node.get("type") not in valid_types:
-                    node["type"] = "core"
-                valid_nodes.append(node)
-
-            # 验证 edges 引用
-            node_ids = {n["id"] for n in valid_nodes}
-            valid_edges = []
-            for edge in data["edges"]:
-                if not isinstance(edge, dict):
-                    continue
-                if "source" not in edge or "target" not in edge:
-                    continue
-                if edge["source"] in node_ids and edge["target"] in node_ids:
-                    # 确保有 confidence 字段
-                    if "confidence" not in edge:
-                        edge["confidence"] = "medium"
-                    valid_edges.append(edge)
-
-            if len(valid_nodes) < 3:
-                continue
-
-            return {
-                "topology_version": data.get("topology_version", "3.0"),
-                "adversarial_score": data.get("adversarial_score", 0.8),
-                "nodes": valid_nodes,
-                "edges": valid_edges,
-            }
-
-        return None
+        """从终审法官输出中提取拓扑沙盘 JSON（委托共享解析器）"""
+        from topology_parser import parse_topology
+        return parse_topology(text, min_nodes=3)
 
 
 # ═══════════════════════════════════════════
