@@ -510,7 +510,7 @@ function useWallbreaker() {
     }
   }, [resetDual])
 
-  return { output, thinking, error, loadingText, stats, topoNodes, topoEdges, topoReady, setTopoNodes, setTopoEdges, setOutput, setTopoReady, simulate, simulateV5, reset, drillDown, dual, simulateDual, resetDual, v5Mode, setV5Mode, v5Agents, v5Phase, v5Topology, drillOutput, drillThinking, drillTopoNodes, drillTopoEdges, drillTopoReady }
+  return { output, thinking, error, loadingText, stats, topoNodes, topoEdges, topoReady, setTopoNodes, setTopoEdges, setOutput, setTopoReady, simulate, simulateV5, reset, drillDown, dual, simulateDual, resetDual, v5Mode, setV5Mode, v5Agents, v5Phase, v5Topology, drillOutput, drillThinking, drillTopoNodes, drillTopoEdges, drillTopoReady, setDrillOutput, setDrillThinking, setDrillTopoReady, drillAbortRef }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -704,7 +704,7 @@ export default function Home() {
   const [images, setImages] = useState<File[]>([])
   const { output, thinking, error, loadingText, stats, topoNodes, topoEdges, topoReady,
     setTopoNodes, setTopoEdges, setOutput, setTopoReady, simulate, simulateV5, reset, drillDown, dual, simulateDual, resetDual,
-    v5Mode, setV5Mode, v5Agents, v5Phase, drillOutput, drillThinking, drillTopoNodes, drillTopoEdges, drillTopoReady } = useWallbreaker()
+    v5Mode, setV5Mode, v5Agents, v5Phase, drillOutput, drillThinking, drillTopoNodes, drillTopoEdges, drillTopoReady, setDrillOutput, setDrillThinking, setDrillTopoReady, drillAbortRef } = useWallbreaker()
   const outputRef = useRef<HTMLDivElement>(null)
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const [showTopo, setShowTopo] = useState(true)
@@ -842,7 +842,6 @@ export default function Home() {
                 ? 'border-purple-500/50 bg-purple-500/10 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.15)]'
                 : 'border-wall-border text-wall-muted hover:text-wall-text hover:border-wall-accent/30'
             }`}
-            title={v5Mode ? 'V5.0 多智能体对抗模式' : '切换到 V5.0 多智能体模式'}
           >
             <span className="text-xs">{v5Mode ? '😈' : '🧠'}</span>
             <span>{v5Mode ? 'V5.0 多Agent' : 'V4.0'}</span>
